@@ -1,0 +1,10 @@
+const express = require("express");
+const router = express.Router();
+const suppliersController = require("../controllers/suppliersController");
+const verify = require("../middleware/verifyToken");
+router.post("/", verify.verityToken, suppliersController.addSuppliers);
+router.get("/", verify.verityToken, suppliersController.getSuppliers);
+router.get("/:id", verify.verityToken, suppliersController.getSuppliersById);
+router.put("/:id", verify.verityToken, suppliersController.updateSuppliers);
+router.delete("/:id", verify.verityToken, suppliersController.deleteSuppliers);
+module.exports = router;
