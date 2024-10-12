@@ -44,7 +44,36 @@ class OrderController {
         data: response,
       });
     } catch (error) {
-      console.error("Error in getUserOrder:", error.message);
+      console.error("Error in addOrder:", error.message);
+      res.status(400).json({ error: error.message });
+    }
+  };
+  static getSuccessPayment = async (req, res) => {
+    try {
+      const response = await OrderService.getSuccessPayment(req.user.id);
+
+      res.status(200).json({
+        success: true,
+        message: "Lấy thông tin đơn hàng đã thanh toán thành công",
+        data: response,
+      });
+    } catch (error) {
+      console.error("Error in addOrder:", error.message);
+      res.status(400).json({ error: error.message });
+    }
+  };
+  static getWaitingPayment = async (req, res) => {
+    try {
+      const response = await OrderService.getWaitingPayment(req.user.id);
+
+      res.status(200).json({
+        success: true,
+        message: "Lấy thông tin đơn hàng đã thanh toán thành công",
+        data: response,
+      });
+    } catch (error) {
+      console.error("Error in addOrder:", error.message);
+      res.status(400).json({ error: error.message });
     }
   };
 }

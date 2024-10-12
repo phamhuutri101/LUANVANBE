@@ -408,6 +408,52 @@ class OrderService {
     );
     return update;
   };
+  static getSuccessPayment = async (id_account) => {
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const order = await OrderModel.aggregate([
+      {
+        $match: {
+          ACCOUNT__ID: ID_ACCOUNT,
+          IS_PAYMENT: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "LIST_PRODUCT.ID_PRODUCT",
+          foreignField: "_id",
+          as: "PRODUCT",
+        },
+      },
+      {
+        $unwind: "$PRODUCT",
+      },
+    ]);
+    return order;
+  };
+  static getWaitingPayment = async (id_account) => {
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const order = await OrderModel.aggregate([
+      {
+        $match: {
+          ACCOUNT__ID: ID_ACCOUNT,
+          IS_PAYMENT: false,
+        },
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "LIST_PRODUCT.ID_PRODUCT",
+          foreignField: "_id",
+          as: "PRODUCT",
+        },
+      },
+      {
+        $unwind: "$PRODUCT",
+      },
+    ]);
+    return order;
+  };
 }
 
 module.exports = OrderService;

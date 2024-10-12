@@ -21,11 +21,7 @@ const paymentController = {
       await OrderService.updateOrderCode(payment.orderId);
       await CartService.deleteAllCart(req.user.id_user);
       await OrderService.statusOrder2(req.user.id);
-      res.status(200).json({
-        message: "Thanh toán thành công",
-        success: true,
-        data: payment,
-      });
+      res.status(200).json(payment);
     } catch (error) {
       res.status(500).json({
         message: error.message,
@@ -100,7 +96,7 @@ const paymentController = {
       //khi thanh toán xong, zalopay server sẽ POST đến url này để thông báo cho server của mình
       //Chú ý: cần dùng ngrok để public url thì Zalopay Server mới call đến được
       callback_url:
-        "https://190b-2402-800-6343-f9c4-607e-3ed9-3c8b-f8f5.ngrok-free.app/v1/payment/callbackZalo",
+        "https://83ed-2402-800-6343-cc67-f8d1-1e7c-14b5-b304.ngrok-free.app/v1/payment/callbackZalo",
       description: `Lazada - Payment for the order #${transID}`,
       bank_code: "",
     };

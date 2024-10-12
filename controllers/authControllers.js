@@ -37,13 +37,13 @@ const authController = {
       const hashedPassword = await bcrypt.hash(req.body.password, salt);
       //create a new user
       const payload = {
-        FIRST_NAME: req.body.first_name,
-        LAST_NAME: req.body.last_name,
         EMAIL_USER: req.body.email_user,
         PHONE_NUMBER: req.body.phone_number,
         CREATED_AT: new Date(),
-        MIDDLE_NAME: req.body.middle_name,
-        FULL_NAME: ` ${req.body.first_name} ${req.body.middle_name} ${req.body.last_name}`,
+        FULL_NAME: req.body.full_name,
+        GENDER_USER: req.body.gender,
+        AVT_URL:
+          "https://user-images.githubusercontent.com/5709133/50445980-88299a80-0912-11e9-962a-6fd92fd18027.png",
       };
 
       const newUser = await UserService.addUser(payload);

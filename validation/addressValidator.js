@@ -4,5 +4,7 @@ const addressSchema = Joi.object({
   district: Joi.string().required(),
   commune: Joi.string().required(),
   desc: Joi.string().required(),
+  full_name: Joi.string().required(),
+  phone_number: Joi.string().required(),
 });
 module.exports = addressSchema;

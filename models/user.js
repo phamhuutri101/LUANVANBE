@@ -1,16 +1,7 @@
 var mongoose = require("mongoose");
 var Schema = mongoose.Schema;
 var USER = new Schema({
-  FIRST_NAME: {
-    type: String,
-  },
-  MIDDLE_NAME: {
-    type: String,
-  },
   FULL_NAME: {
-    type: String,
-  },
-  LAST_NAME: {
     type: String,
   },
   EMAIL_USER: {
@@ -22,7 +13,7 @@ var USER = new Schema({
   CREATED_AT: {
     type: Date,
   },
-  GENGER_USER: {
+  GENDER_USER: {
     type: String,
   },
   AVT_URL: {

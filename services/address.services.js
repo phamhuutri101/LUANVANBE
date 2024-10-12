@@ -1,7 +1,15 @@
 const AddressModel = require("../models/address");
 const ObjectId = require("mongoose").Types.ObjectId;
 class AddressService {
-  static addAddress = async (user_id, province, district, commune, desc) => {
+  static addAddress = async (
+    user_id,
+    province,
+    district,
+    commune,
+    desc,
+    full_name,
+    phone_number
+  ) => {
     const USER_ID = new ObjectId(user_id);
     try {
       let result;
@@ -20,7 +28,7 @@ class AddressService {
         {
           USER_ID: USER_ID,
           LIST_ADDRESS_MAX_NUMBER: {
-            $lt: 500,
+            $lt: 100,
           },
         },
         {
@@ -30,6 +38,8 @@ class AddressService {
               DISTRICT: district,
               COMMUNE: commune,
               DESC: desc,
+              FULL_NAME: full_name,
+              PHONE_NUMBER: phone_number,
               FROM_DATE: new Date(),
               TO_DATE: null,
               IS_DEFAULT: checkFirstAddress ? false : true,
@@ -45,7 +55,7 @@ class AddressService {
       );
       return result;
     } catch (error) {
-      res.status(400).json(error);
+      throw error;
     }
   };
 
@@ -56,10 +66,13 @@ class AddressService {
     district,
     commune,
     desc,
+    full_name,
+    phone_number,
   }) => {
     try {
       const ADDRESS_ID = new ObjectId(address_id);
       const USER_ID = new ObjectId(user_id);
+
       const update = await AddressModel.updateOne(
         {
           USER_ID: USER_ID,
@@ -70,6 +83,8 @@ class AddressService {
             "LIST_ADDRESS.$[element].DISTRICT": district,
             "LIST_ADDRESS.$[element].COMMUNE": commune,
             "LIST_ADDRESS.$[element].DESC": desc,
+            "LIST_ADDRESS.$[element].FULL_NAME": full_name,
+            "LIST_ADDRESS.$[element].PHONE_NUMBER": phone_number,
           },
         },
         {
@@ -117,6 +132,38 @@ class AddressService {
         {
           $replaceRoot: {
             newRoot: "$LIST_ADDRESS_USER",
+          },
+        },
+      ]);
+      return addressUser;
+    } catch (error) {
+      console.error(error);
+      res.status(400).json(error);
+    }
+  };
+  static getDefaultAddress = async (user_id) => {
+    const USER_ID = new ObjectId(user_id);
+    try {
+      const addressUser = await AddressModel.aggregate([
+        {
+          $match: {
+            USER_ID: USER_ID,
+          },
+        },
+        { $unwind: "$LIST_ADDRESS" },
+
+        {
+          $group: {
+            _id: "$USER_ID",
+            LIST_ADDRESS_USER: {
+              $push: "$LIST_ADDRESS",
+            },
+          },
+        },
+        { $unwind: "$LIST_ADDRESS_USER" },
+        {
+          $match: {
+            "LIST_ADDRESS_USER.IS_DEFAULT": true,
           },
         },
       ]);
@@ -177,6 +224,60 @@ class AddressService {
       }
     );
     return getAddressId;
+  };
+  static updateIs_DefaultAddress = async (user_id, id_address) => {
+    const USER_ID = new ObjectId(user_id);
+    const ADDRESS_ID = new ObjectId(id_address);
+
+    try {
+      // Tìm địa chỉ được chọn
+      const findAddress = await AddressModel.aggregate([
+        {
+          $match: {
+            USER_ID: USER_ID,
+          },
+        },
+        { $unwind: "$LIST_ADDRESS" },
+        {
+          $match: {
+            "LIST_ADDRESS._id": ADDRESS_ID,
+          },
+        },
+      ]);
+
+      // Nếu không tìm thấy địa chỉ
+      if (findAddress.length === 0) {
+        throw new Error("Địa chỉ này không tồn tại hoặc đã bị xóa.");
+      }
+
+      // Bước 1: Cập nhật tất cả các địa chỉ thành IS_DEFAULT = false
+      await AddressModel.updateMany(
+        {
+          USER_ID: USER_ID,
+          "LIST_ADDRESS.IS_DEFAULT": true, // Chỉ cập nhật những địa chỉ đang có IS_DEFAULT là true
+        },
+        {
+          $set: { "LIST_ADDRESS.$[].IS_DEFAULT": false }, // Cập nhật tất cả IS_DEFAULT thành false
+        }
+      );
+
+      // Bước 2: Cập nhật địa chỉ được chọn thành IS_DEFAULT = true
+      await AddressModel.updateOne(
+        {
+          USER_ID: USER_ID,
+          "LIST_ADDRESS._id": ADDRESS_ID,
+        },
+        {
+          $set: { "LIST_ADDRESS.$.IS_DEFAULT": true },
+        }
+      );
+      return { message: "Cập nhật địa chỉ mặc định thành công." };
+    } catch (error) {
+      console.error(error);
+      throw new Error(
+        "Có lỗi xảy ra trong quá trình cập nhật địa chỉ mặc định."
+      );
+    }
   };
 }
 module.exports = AddressService;

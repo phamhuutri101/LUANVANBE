@@ -177,5 +177,31 @@ class PriceService {
     ]);
     return getPrice;
   };
+  static getPriceRange = async (id_product) => {
+    const ID_PRODUCT = new ObjectId(id_product);
+    const getPrice = await PriceModel.aggregate([
+      {
+        $match: {
+          ID_PRODUCT: ID_PRODUCT,
+        },
+      },
+      {
+        $unwind: {
+          path: "$LIST_PRICE",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          ID_PRODUCT: 1,
+          PRICE_NUMBER: "$LIST_PRICE.PRICE_NUMBER",
+          FROM_DATE: "$LIST_PRICE.FROM_DATE",
+          TO_DATE: "$LIST_PRICE.TO_DATE",
+        },
+      },
+    ]);
+    return getPrice;
+  };
 }
 module.exports = PriceService;

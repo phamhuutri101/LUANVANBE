@@ -293,6 +293,39 @@ class UserService {
     const user = await UserModel.findOne({ _id: ID_USER });
     return user;
   };
+  static updateAvatar = async (id_user, img_url) => {
+    const ID_USER = new ObjectId(id_user);
+    const update_user = await UserModel.updateOne(
+      { _id: ID_USER },
+      {
+        $set: {
+          AVT_URL: img_url,
+        },
+      }
+    );
+    return update_user;
+  };
+  static updateInfoUser = async (
+    id_user,
+    full_name,
+    email,
+    gender_user,
+    phone_number
+  ) => {
+    const ID_USER = new ObjectId(id_user);
+    const update_user = await UserModel.updateOne(
+      { _id: ID_USER },
+      {
+        $set: {
+          FULL_NAME: full_name,
+          EMAIL_USER: email,
+          PHONE_NUMBER: phone_number,
+          GENDER_USER: gender_user,
+        },
+      }
+    );
+    return update_user;
+  };
 }
 
 module.exports = UserService;

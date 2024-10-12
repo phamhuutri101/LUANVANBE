@@ -82,5 +82,39 @@ const userController = {
       console.error(error);
     }
   },
+  updateAvatar: async (req, res) => {
+    try {
+      const user = await UserService.updateAvatar(
+        req.user.id_user,
+        req.body.img_url
+      );
+
+      res.status(200).json({
+        message: "Cập nhật ảnh đại diện thành công",
+        success: true,
+        data: user,
+      });
+    } catch (error) {
+      res.status(500).json({ err: error.message });
+    }
+  },
+  updateProfile: async (req, res) => {
+    try {
+      const user = await UserService.updateInfoUser(
+        req.user.id_user,
+        req.body.full_name,
+        req.body.email,
+        req.body.gender_user,
+        req.body.phone_number
+      );
+      res.status(200).json({
+        message: "Cập nhật thông tin cá nhân thành công",
+        success: true,
+        data: user,
+      });
+    } catch (error) {
+      res.status(500).json({ err: error.message });
+    }
+  },
 };
 module.exports = userController;

@@ -1,4 +1,5 @@
 const PriceService = require("../services/price.service");
+const { message } = require("../validation/addressValidator");
 const priceController = {
   addPrice: async (req, res) => {
     try {
@@ -76,13 +77,40 @@ const priceController = {
       const getPriceWithoutKey = await PriceService.getPriceWithoutKey(
         req.params.id_priceDefault
       );
-      res.status(200).json({
-        message: "Lấy giá thành công",
-        success: true,
-        data: getPriceWithoutKey,
-      });
+      if (getPriceWithoutKey.length > 0) {
+        res.status(200).json({
+          message: "Lấy giá thành công",
+          success: true,
+          data: getPriceWithoutKey,
+        });
+      } else {
+        res.status(500).json({
+          message: "sản phẩm chưa thêm giá mặc định",
+          success: false,
+        });
+      }
     } catch (error) {
       res.status(500).json(error);
+    }
+  },
+  getPriceRange: async (req, res) => {
+    try {
+      const PriceRange = await PriceService.getPriceRange(
+        req.params.id_product
+      );
+      if (PriceRange.length > 0) {
+        res.status(200).json({
+          message: "lấy giá thành công",
+          success: true,
+          data: PriceRange,
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        message: "lỗi khi lấy khoảng giá",
+        success: false,
+        error: error.message,
+      });
     }
   },
 };

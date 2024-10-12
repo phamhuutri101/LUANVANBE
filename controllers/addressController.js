@@ -14,7 +14,9 @@ const addressController = {
         req.body.provide,
         req.body.district,
         req.body.commune,
-        req.body.desc
+        req.body.desc,
+        req.body.full_name,
+        req.body.phone_number
       );
       res.status(200).json({
         message: "thêm địa chỉ thành công",
@@ -35,6 +37,8 @@ const addressController = {
         district: req.body.DISTRICT,
         commune: req.body.COMMUNE,
         desc: req.body.DESC,
+        full_name: req.body.FULL_NAME,
+        phone_number: req.body.PHONE_NUMBER,
       });
       res.status(200).json(addAddress);
     } catch (error) {
@@ -72,12 +76,41 @@ const addressController = {
       res.status(400).json(error);
     }
   },
+  getDefaultAddress: async (req, res, next) => {
+    try {
+      const getAddressUser = await AddressService.getDefaultAddress(
+        req.user.id_user
+      );
+      res.status(200).json({
+        message: "lấy địa chỉ thành công!",
+        success: true,
+        data: getAddressUser,
+      });
+    } catch (error) {
+      res.status(400).json(error);
+    }
+  },
   deleteAddress: async (req, res, next) => {
     try {
       await AddressService.deleteAddress(req.user.id_user, req.params.id);
       res.status(200).json("xóa thành công");
     } catch (error) {
       res.status(400).json(error);
+    }
+  },
+  updateIs_DefaultAddress: async (req, res, next) => {
+    try {
+      const response = await AddressService.updateIs_DefaultAddress(
+        req.user.id_user,
+        req.params.id
+      );
+      res.status(200).json({
+        message: "cập nhật thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      console.error(error);
     }
   },
 };

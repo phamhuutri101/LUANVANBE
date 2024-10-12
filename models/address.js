@@ -18,6 +18,12 @@ var USER_ADDRESS = new Schema({
       DESC: {
         type: String,
       },
+      FULL_NAME: {
+        type: String,
+      },
+      PHONE_NUMBER: {
+        type: Number,
+      },
       FROM_DATE: {
         type: Date,
       },
