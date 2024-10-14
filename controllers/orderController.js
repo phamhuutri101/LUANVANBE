@@ -76,6 +76,18 @@ class OrderController {
       res.status(400).json({ error: error.message });
     }
   };
+  static getOrderById = async (req, res) => {
+    try {
+      const response = await OrderService.getOrderById(req.params.id);
+      res.status(200).json({
+        success: true,
+        message: "Lấy thông tin đơn hàng thành công",
+        data: response,
+      });
+    } catch (error) {
+      console.error("Error in getOrderById:", error.message);
+    }
+  };
 }
 
 module.exports = OrderController;

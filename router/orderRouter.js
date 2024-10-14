@@ -14,4 +14,5 @@ router.get(
   verify.verityToken,
   orderController.getWaitingPayment
 );
+router.get("/:id", verify.verityToken, orderController.getOrderById);
 module.exports = router;

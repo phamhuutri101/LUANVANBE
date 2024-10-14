@@ -10,9 +10,7 @@ const ProductReviews = {
         req.user.id_user,
         number_start,
         desc_reviews,
-        img_url,
-        keys,
-        values
+        img_url
       );
 
       if (result.success) {

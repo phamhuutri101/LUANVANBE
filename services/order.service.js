@@ -454,6 +454,11 @@ class OrderService {
     ]);
     return order;
   };
+  static getOrderById = async (idOrder) => {
+    const ID_ORDER = new ObjectId(idOrder);
+    const order = await OrderModel.findById(ID_ORDER);
+    return order;
+  };
 }
 
 module.exports = OrderService;

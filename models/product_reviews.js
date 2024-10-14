@@ -13,21 +13,16 @@ var PRODUCT_REVIEWS = new Schema({
   NUMBER_OF_REVIEWS: {
     type: Number,
   },
-  IMG_URL: {
-    type: String,
-  },
-  REVIEW_CONTENT: {
-    type: String,
-  },
-  LIST_MATCH_KEY: [
+  IMG_URL: [
     {
-      KEY: {
-        type: String,
-      },
-      VALUE: {
+      FILE_URL: {
         type: String,
       },
     },
   ],
+
+  REVIEW_CONTENT: {
+    type: String,
+  },
 });
 module.exports = mongoose.model("product_reviews", PRODUCT_REVIEWS);
