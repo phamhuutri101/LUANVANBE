@@ -24,7 +24,7 @@ router.use("/v1/address", addressRouter);
 router.use("/v1/upload", uploadRouter);
 router.use("/v1/product", productRouter);
 router.use("/v1/category", categoryRouter);
-router.use("/v1/typeproduct", typeProductRouter);
+router.use("/v1/typeProduct", typeProductRouter);
 router.use("/v1/suppliers", suppliersRouter);
 router.use("/v1/inventory", inventoryRouter);
 

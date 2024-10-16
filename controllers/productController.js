@@ -364,19 +364,6 @@ class ProductController {
       res.status(400).json({ error: error.message });
     }
   };
-
-  static getAllTypeProducts = async (req, res) => {
-    try {
-      const type_Products = await TypeProductModel.find();
-      res.status(200).json({
-        message: "Lấy tất cả loại sản phẩm thành công",
-        success: true,
-        data: type_Products,
-      });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  };
 }
 
 module.exports = ProductController;
