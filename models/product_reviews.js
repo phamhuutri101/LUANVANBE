@@ -13,6 +13,12 @@ var PRODUCT_REVIEWS = new Schema({
   NUMBER_OF_REVIEWS: {
     type: Number,
   },
+  REVIEW_DATE: {
+    type: Date,
+  },
+  CLASSIFY: {
+    type: String,
+  },
   IMG_URL: [
     {
       FILE_URL: {

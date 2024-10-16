@@ -7,7 +7,8 @@ class ProductReviews {
     id_account,
     number_start,
     desc_reviews,
-    img_url
+    img_url,
+    classify
   ) => {
     const ID_PRODUCT = new ObjectId(id_product);
     const ID_ACCOUNT = new ObjectId(id_account);
@@ -24,6 +25,8 @@ class ProductReviews {
       NUMBER_OF_START: number_start,
       REVIEW_CONTENT: desc_reviews,
       IMG_URL: listFile, // Đảm bảo IMG_URL là mảng các object
+      REVIEW_DATE: new Date(),
+      CLASSIFY: classify,
     };
 
     // Cập nhật hoặc thêm mới đánh giá
@@ -36,6 +39,36 @@ class ProductReviews {
     } catch (error) {
       console.error("Lỗi khi thêm đánh giá:", error);
       return { success: false, message: "Có lỗi xảy ra khi thêm đánh giá." };
+    }
+  };
+  static GetNumberStartProduct = async (id_product) => {
+    try {
+      const ID_PRODUCT = new ObjectId(id_product);
+      const reviews = await ProductReviewsModel.find({
+        ID_PRODUCT: ID_PRODUCT,
+      });
+
+      if (reviews.length === 0) {
+        return { averageRating: 0, totalReviews: 0 };
+      }
+      const totalStarts = reviews.reduce(
+        (total, review) => total + review.NUMBER_OF_START,
+        0
+      );
+      const averageRating = totalStarts / reviews.length;
+      return { averageRating, totalReviews: reviews.length };
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  static getTotalReviewsByIdProduct = async (id_product) => {
+    try {
+      const response = await ProductReviewsModel.find({
+        ID_PRODUCT: id_product,
+      });
+      return response;
+    } catch (error) {
+      console.error(error);
     }
   };
 }

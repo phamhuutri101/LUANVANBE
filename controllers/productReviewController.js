@@ -2,7 +2,8 @@ const ProductReviewServices = require("../services/product_reviews.services");
 const ProductReviews = {
   addReviews: async (req, res) => {
     try {
-      const { number_start, desc_reviews, img_url, keys, values } = req.body;
+      const { number_start, desc_reviews, img_url, keys, values, classify } =
+        req.body;
 
       // Gọi service để thêm hoặc cập nhật đánh giá
       const result = await ProductReviewServices.AddReviews(
@@ -10,7 +11,8 @@ const ProductReviews = {
         req.user.id_user,
         number_start,
         desc_reviews,
-        img_url
+        img_url,
+        classify
       );
 
       if (result.success) {
@@ -29,6 +31,38 @@ const ProductReviews = {
       console.error("Error adding review:", error);
       res.status(500).json({
         message: "Lỗi khi thêm đánh giá.",
+        success: false,
+      });
+    }
+  },
+  getNumberStartProduct: async (req, res) => {
+    try {
+      const result = await ProductReviewServices.GetNumberStartProduct(
+        req.params.id
+      );
+
+      res.status(200).json({
+        message: "Lấy số đánh giá thành công",
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  },
+  getTotalReviewsByIdProduct: async (req, res) => {
+    try {
+      const result = await ProductReviewServices.getTotalReviewsByIdProduct(
+        req.params.id
+      );
+      res.status(200).json({
+        message: "Lấy tất cả đánh giá thành công",
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Lỗi khi lấy tất cả đánh giá",
         success: false,
       });
     }
