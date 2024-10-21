@@ -9,8 +9,8 @@ var FAVORITE = new Schema({
     type: Schema.Types.ObjectId,
     required: true,
   },
-  NUMBER_FAVORITE: {
-    type: Number,
+  IS_FAVORITE: {
+    type: Boolean,
   },
   FROM_DATE: {
     type: Date,

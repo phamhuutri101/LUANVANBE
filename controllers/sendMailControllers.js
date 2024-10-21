@@ -25,5 +25,19 @@ const sendMailController = {
       });
     }
   },
+  sendMailOrder: async (req, res) => {
+    try {
+      await sendEmailServices.sendMailOrder(req.body.email);
+      res.status(200).json({
+        message: "gửi thư cảm ơn thành công",
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "lỗi khi gửi email",
+        success: false,
+      });
+    }
+  },
 };
 module.exports = sendMailController;

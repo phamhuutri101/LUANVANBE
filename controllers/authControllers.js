@@ -181,6 +181,53 @@ const authController = {
       res.status(500).json({ error: error.message });
     }
   },
+  changePassword: async (req, res) => {
+    try {
+      const { old_password, new_password } = req.body;
+      const id = req.user.id;
+      // Tìm tài khoản người dùng dựa trên tên đăng nhập
+      const loginAccount = await account.findOne({
+        _id: id,
+      });
+
+      if (!loginAccount) {
+        return res.status(404).json({
+          message: "Tài khoản không tồn tại",
+          success: false,
+        });
+      }
+
+      // Kiểm tra xem mật khẩu cũ có khớp không
+      const validPassword = await bcrypt.compare(
+        old_password,
+        loginAccount.PASSWORD
+      );
+
+      if (!validPassword) {
+        return res.status(400).json({
+          message: "Mật khẩu cũ không đúng",
+          success: false,
+        });
+      }
+
+      // Mã hóa mật khẩu mới
+      const salt = await bcrypt.genSalt(10);
+      const hashedNewPassword = await bcrypt.hash(new_password, salt);
+
+      // Cập nhật mật khẩu mới
+      loginAccount.PASSWORD = hashedNewPassword;
+      await loginAccount.save();
+
+      return res.status(200).json({
+        message: "Đổi mật khẩu thành công",
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: error.message,
+      });
+    }
+  },
 
   // Logout
 };

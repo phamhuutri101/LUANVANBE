@@ -37,36 +37,36 @@ var PRODUCT = new Schema({
       ],
     },
   ],
-  LIST_FILE_ATTACHMENT:[
-  {
-    FILE_URL: {
-      type: String,
-    },
-    FILE_TYPE: {
-      type: String,
-    },
-    FROM_DATE: {
-      type: Date,
-    },
-    TO_DATE: {
-      type: Date,
-    },
+  LIST_FILE_ATTACHMENT: [
+    {
+      FILE_URL: {
+        type: String,
+      },
+      FILE_TYPE: {
+        type: String,
+      },
+      FROM_DATE: {
+        type: Date,
+      },
+      TO_DATE: {
+        type: Date,
+      },
     },
   ],
-  LIST_FILE_ATTACHMENT_DEFAULT:[
-  {
-    FILE_URL: {
-      type: String,
-    },
-    FILE_TYPE: {
-      type: String,
-    },
-    FROM_DATE: {
-      type: Date,
-    },
-    TO_DATE: {
-      type: Date,
-    },
+  LIST_FILE_ATTACHMENT_DEFAULT: [
+    {
+      FILE_URL: {
+        type: String,
+      },
+      FILE_TYPE: {
+        type: String,
+      },
+      FROM_DATE: {
+        type: Date,
+      },
+      TO_DATE: {
+        type: Date,
+      },
     },
   ],
   ACCOUNT__ID: {
@@ -88,11 +88,11 @@ var PRODUCT = new Schema({
           KEY: {
             type: String,
           },
-          VALUE:[
+          VALUE: [
             {
-            type: String,
+              type: String,
             },
-          ],  
+          ],
         },
       ],
     },
@@ -101,9 +101,14 @@ var PRODUCT = new Schema({
 
 PRODUCT.index(
   {
-    NAME_PRODUCT: 'text',
-    SHORT_DESC: 'text',
-    DESC_PRODUCT: 'text'
+    NAME_PRODUCT: "text",
+    SHORT_DESC: "text",
+    DESC_PRODUCT: "text",
+  },
+  {
+    weights: {
+      NAME_PRODUCT: 5,
+    },
   }
-)
+);
 module.exports = mongoose.model("product", PRODUCT);

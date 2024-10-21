@@ -2,7 +2,10 @@ const TypeProduct = require("../services/typeProduct.service");
 const addTypeProductController = {
   add: async (req, res) => {
     try {
-      const response = await TypeProduct.createTypeProduct(req.body.name_type);
+      const response = await TypeProduct.createTypeProduct(
+        req.body.name_type,
+        req.body.avt_url
+      );
       res.status(200).json({
         success: true,
         message: "Thêm loại sản phẩm thành công",

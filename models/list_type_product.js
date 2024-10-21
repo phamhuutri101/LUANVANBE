@@ -14,5 +14,9 @@ var LIST_TYPE_PRODUCT = new Schema({
     type: Boolean,
     default: false,
   },
+  ATV_URL: {
+    type: String,
+    default: null,
+  },
 });
 module.exports = mongoose.model("list_type_product", LIST_TYPE_PRODUCT);
