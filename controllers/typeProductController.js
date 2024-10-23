@@ -33,5 +33,39 @@ const addTypeProductController = {
       });
     }
   },
+  getCategoriesByTypeProduct: async (req, res) => {
+    try {
+      const response = await TypeProduct.getCategoriesByTypeProduct(
+        req.params.id
+      );
+      res.status(200).json({
+        success: true,
+        message: "Lấy danh sách danh mục theo loại sản phẩm thành công",
+        data: response,
+      });
+    } catch (error) {
+      res.status(400).json({
+        message: error.message,
+        success: false,
+      });
+    }
+  },
+  getProductCategoriesByTypeProduct: async (req, res) => {
+    try {
+      const response = await TypeProduct.getProductCategoriesByTypeProduct(
+        req.params.id
+      );
+      res.status(200).json({
+        success: true,
+        message: "Lấy danh sách danh mục theo loại sản phẩm thành công",
+        data: response,
+      });
+    } catch (error) {
+      res.status(400).json({
+        message: error.message,
+        success: false,
+      });
+    }
+  },
 };
 module.exports = addTypeProductController;
