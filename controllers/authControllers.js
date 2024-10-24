@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const randomCode = require("../utils/code");
 const UserService = require("../services/user.service");
 const sendEmailServices = require("../services/emailService");
+const ObjectId = require("mongoose").Types.ObjectId;
 const TIME_NOW = new Date();
 const {
   registerUserSchema,
@@ -107,7 +108,7 @@ const authController = {
               id_user: loginAccount.USER_ID,
             },
             process.env.JWT_ACCESS_KEY, // key để đăng nhập vào
-            { expiresIn: "5h" } // thời gian token hết hạn
+            { expiresIn: "10d" } // thời gian token hết hạn
           );
           const refreshToken = jwt.sign(
             {
@@ -228,7 +229,141 @@ const authController = {
       });
     }
   },
+  loginAdmin: async (req, res) => {
+    try {
+      const { error } = loginUserSchema.validate(req.body);
+      if (error) {
+        return res.status(400).json({ message: error.details[0].message });
+      }
 
+      const loginAccount = await account.findOne({
+        USER_NAME: req.body.user_name,
+      });
+
+      if (!loginAccount) {
+        return res.status(404).json({
+          message: "Sai tên đăng nhập",
+          success: false,
+        });
+      }
+
+      const validPassword = await bcrypt.compare(
+        req.body.password,
+        loginAccount.PASSWORD
+      );
+
+      if (!validPassword) {
+        return res.status(400).json({
+          message: "Sai mật khẩu",
+          success: false,
+        });
+      }
+
+      // Kiểm tra tài khoản đã được kích hoạt chưa
+      const isActive = await UserService.checkActiveById(loginAccount.id);
+      if (!isActive[0].IS_ACTIVE) {
+        return res.status(400).json({
+          message: "Tài khoản chưa được kích hoạt",
+          success: false,
+        });
+      }
+
+      // Kiểm tra quyền admin
+      if (!loginAccount.OBJECT_ROLE.IS_ADMIN) {
+        return res.status(403).json({
+          message: "Bạn không có quyền truy cập admin",
+          success: false,
+        });
+      }
+
+      // Tạo token nếu là admin
+      const accessToken = jwt.sign(
+        {
+          id: loginAccount.id,
+          admin: loginAccount.OBJECT_ROLE.IS_ADMIN,
+          shopper: loginAccount.OBJECT_ROLE.IS_SHOPPER,
+          id_user: loginAccount.USER_ID,
+        },
+        process.env.JWT_ACCESS_KEY,
+        { expiresIn: "10d" }
+      );
+
+      const refreshToken = jwt.sign(
+        {
+          id: loginAccount.id,
+          admin: loginAccount.OBJECT_ROLE.IS_ADMIN,
+          id_user: loginAccount.USER_ID,
+        },
+        process.env.JWT_REFRESH_KEY,
+        { expiresIn: "365d" }
+      );
+
+      res.status(200).json({
+        message: "Đăng nhập thành công",
+        success: true,
+        accessToken,
+        refreshToken,
+      });
+    } catch (e) {
+      res.status(500).json({
+        message: e.message,
+      });
+    }
+  },
+  deleteUser: async (req, res) => {
+    try {
+      const id = req.params.id;
+      const filter = {
+        _id: id,
+      };
+      const response = await account.findByIdAndUpdate(filter, {
+        IS_ACTIVE: false,
+      });
+
+      if (!response) {
+        return res.status(404).json({
+          message: "Tài khoản không tồn tại",
+          success: false,
+        });
+      }
+
+      return res.status(200).json({
+        message: "Xóa tài khoản thành công",
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: error.message,
+      });
+    }
+  },
+  reactiveUser: async (req, res) => {
+    try {
+      const id = req.params.id;
+      const filter = {
+        _id: id,
+      };
+      const response = await account.findByIdAndUpdate(filter, {
+        IS_ACTIVE: true,
+      });
+
+      if (!response) {
+        return res.status(404).json({
+          message: "Tài khoản không tồn tại",
+          success: false,
+        });
+      }
+
+      return res.status(200).json({
+        message: "kích hoạt lại khoản thành công",
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: error.message,
+      });
+    }
+  },
   // Logout
 };
 module.exports = authController;

@@ -21,35 +21,25 @@ const verify = {
       });
     }
   },
-  checkPermissionUser: (req, res, next) => {
-    const user = req.user;
-    if (user && user.role === "admin") {
-      next();
-    } else {
-      return res.status(403).json({
-        message: "bạn không đ�� quyền truy cập",
-        success: false,
-      });
-    }
-  },
+
   checkPermissionShopper: (req, res, next) => {
     const user = req.user;
-    if (user && user.role === "admin") {
+    if (user && user.shopper == true) {
       next();
     } else {
       return res.status(403).json({
-        message: "bạn không đ�� quyền truy cập",
+        message: "bạn không có quyền truy cập khi bạn chưa là người bán",
         success: false,
       });
     }
   },
   checkPermissionAdmin: (req, res, next) => {
     const user = req.user;
-    if (user && user.role === "admin") {
+    if (user && user.admin == true) {
       next();
     } else {
       return res.status(403).json({
-        message: "bạn không đ�� quyền truy cập",
+        message: "bạn không có quyền truy cập trang này dành cho admin",
         success: false,
       });
     }

@@ -1,6 +1,6 @@
 const { date } = require("joi");
 const ProductService = require("../services/product.service");
-const TypeProductModel = require("../models/type_product");
+
 const { message, error } = require("../validation/productValidator");
 
 const { productSchema } = require("../validation/productValidator");

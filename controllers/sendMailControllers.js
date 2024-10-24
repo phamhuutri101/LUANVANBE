@@ -39,5 +39,39 @@ const sendMailController = {
       });
     }
   },
+  sendMailShopAccount: async (req, res) => {
+    try {
+      await sendEmailServices.sendMaiStopAccount(
+        req.body.email,
+        req.body.name_account
+      );
+      res.status(200).json({
+        message: "gửi thư thông báo tài khoản đã bị ngưng thành công",
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "lỗi khi gửi email",
+        success: false,
+      });
+    }
+  },
+  reactiveAccount: async (req, res) => {
+    try {
+      await sendEmailServices.sendReactiveAcount(
+        req.body.email,
+        req.body.name_account
+      );
+      res.status(200).json({
+        message: "gửi thư thông báo tài khoản đã bị khôi phục thành công",
+        success: true,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "lỗi khi gửi email",
+        success: false,
+      });
+    }
+  },
 };
 module.exports = sendMailController;

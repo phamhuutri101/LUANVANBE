@@ -326,6 +326,40 @@ class UserService {
     );
     return update_user;
   };
+  static userCountArray = [];
+
+  static updateUserCountRealtime = async () => {
+    try {
+      // Sử dụng aggregate để tính tổng số lượng người dùng
+      const userCountResult = await UserModel.aggregate([
+        {
+          $group: {
+            _id: null, // Gom tất cả vào một nhóm duy nhất
+            count: { $sum: 1 }, // Đếm tổng số người dùng
+          },
+        },
+        {
+          $project: {
+            _id: 0, // Không hiển thị _id trong kết quả cuối
+            count: 1, // Chỉ lấy số lượng người dùng
+          },
+        },
+      ]);
+
+      // Lấy tổng số lượng người dùng từ kết quả
+      const totalUserCount =
+        userCountResult.length > 0 ? userCountResult[0].count : 0;
+
+      // Đẩy tổng số lượng người dùng vào mảng tĩnh
+      UserService.userCountArray.push(totalUserCount);
+
+      // Trả về mảng tĩnh với dữ liệu đã cập nhật
+      return UserService.userCountArray;
+    } catch (error) {
+      console.error("Error in updateUserCountRealtime:", error);
+      throw new Error("Failed to update user count.");
+    }
+  };
 }
 
 module.exports = UserService;

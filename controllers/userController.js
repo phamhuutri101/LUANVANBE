@@ -1,6 +1,7 @@
 const account = require("../models/account");
 const UserModel = require("../models/user");
 const UserService = require("../services/user.service");
+const { message } = require("../validation/addressValidator");
 const userController = {
   getAllUsers: async (req, res) => {
     try {
@@ -114,6 +115,20 @@ const userController = {
       });
     } catch (error) {
       res.status(500).json({ err: error.message });
+    }
+  },
+  updateNumberUserRealTime: async (req, res) => {
+    try {
+      const response = await UserService.updateUserCountRealtime();
+      res.status(200).json({
+        message: "Cập nhật số lượng người dùng  thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ message: "lỗi khi cập nhật dữ liệu", success: false });
     }
   },
 };

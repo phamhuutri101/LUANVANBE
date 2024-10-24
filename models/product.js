@@ -73,6 +73,7 @@ var PRODUCT = new Schema({
     type: Schema.Types.ObjectId,
     required: true,
   },
+
   IS_DELETED: {
     type: Boolean,
     default: false,
