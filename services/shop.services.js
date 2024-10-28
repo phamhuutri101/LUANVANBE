@@ -5,10 +5,15 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const moment = require("moment");
 
 class ShopServices {
-  static activeShop = async (id_account, name_shop) => {
+  static CheckTimeActive = async (
+    id_account,
+    id_user,
+    name_shop,
+    desc_shop
+  ) => {
     try {
       const ACCOUNT_ID = new ObjectId(id_account);
-
+      const USER_ID = new ObjectId(id_user);
       // Lấy thông tin tài khoản
       const account = await AccountModel.findOne({ _id: ACCOUNT_ID });
 
@@ -41,7 +46,26 @@ class ShopServices {
       if (existingShop) {
         throw new Error("Tài khoản này đã tạo shop trước đó.");
       }
-      // Cập nhật tài khoản thành người bán
+      await ShopModel.create({
+        ID_ACCOUNT: ACCOUNT_ID,
+        ID_USER: USER_ID,
+        SHOP_DESC: desc_shop,
+        SHOP_NAME: name_shop,
+        TO_DATE: new Date(),
+        FROM_DATE: null,
+      });
+
+      return {
+        message: "Chờ người kiểm duyệt, duyệt tài khoản",
+        success: false,
+      };
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  };
+  static activeShop = async (id_account) => {
+    try {
+      const ACCOUNT_ID = new ObjectId(id_account);
       await AccountModel.findOneAndUpdate(
         { _id: ACCOUNT_ID },
         {
@@ -51,28 +75,47 @@ class ShopServices {
         }
       );
 
-      await ShopModel.create({
-        ID_ACCOUNT: ACCOUNT_ID,
-        SHOP_NAME: name_shop,
-      });
-
-      return { message: "Kích hoạt tài khoản người bán thành công." };
+      const response = await ShopModel.updateOne(
+        {
+          ID_ACCOUNT: ACCOUNT_ID,
+        },
+        {
+          $set: {
+            IS_ACTIVE: true,
+            FROM_DATE: new Date(),
+          },
+        }
+      );
+      return response;
     } catch (error) {
-      throw new Error(error.message);
+      console.error(error.message);
     }
   };
   static checkActiveShop = async (id_account) => {
     try {
       const ACCOUNT_ID = new ObjectId(id_account);
 
-      const response = await ShopModel.findOne({
+      // Tìm shop với ID_ACCOUNT tương ứng
+      const shop = await ShopModel.findOne({
         ID_ACCOUNT: ACCOUNT_ID,
       });
-      return response;
+
+      // Kiểm tra các trường hợp
+      if (!shop) {
+        return "undefined"; // Shop chưa được tạo
+      }
+
+      if (!shop.IS_ACTIVE) {
+        return "nonActive"; // Shop đã tạo nhưng chưa active
+      }
+
+      return "active"; // Shop tồn tại và đã active
     } catch (error) {
       console.error(error);
+      throw error; // Ném lỗi để xử lý ở tầng trên
     }
   };
+
   static getShopByProductId = async (productId) => {
     try {
       const PRODUCT_ID = new ObjectId(productId);
@@ -108,6 +151,17 @@ class ShopServices {
       }
     } catch (error) {
       console.error("Lỗi khi lấy tên shop:", error);
+      throw error;
+    }
+  };
+  static getShopNonActive = async () => {
+    try {
+      const response = await ShopModel.find({
+        IS_ACTIVE: false,
+      });
+      return response;
+    } catch (error) {
+      console.error("Lỗi khi lấy shop:", error);
       throw error;
     }
   };

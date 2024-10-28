@@ -108,7 +108,7 @@ class Inventory_EntriesService {
     return product;
   };
   static getInventory_Entries = async () => {
-    const getInventory_Entries = await inventory_entriesModel.find();
+    const getInventory_Entries = await inventory_entriesModel.findOne({});
     return getInventory_Entries;
   };
 
@@ -119,7 +119,12 @@ class Inventory_EntriesService {
 
   static updateInventory_Entries = async (id, payload) => {};
 
-  static deleteInventory_Entries = async (id) => {};
+  static deleteInventory_Entries = async (id) => {
+    const deleteInventory_Entries = await inventory_entriesModel
+      .findOne({ _id: id })
+      .exec();
+    return deleteInventory_Entries;
+  };
 }
 
 module.exports = Inventory_EntriesService;

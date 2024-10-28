@@ -7,4 +7,9 @@ router.post(
   verify.verityToken,
   InventoryController.addInventory_Entries
 );
+router.put(
+  "/delete/:id",
+  verify.verityToken,
+  InventoryController.deleteInventory_Entries
+);
 module.exports = router;

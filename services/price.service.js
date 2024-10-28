@@ -40,6 +40,7 @@ class PriceService {
         upsert: true,
       }
     );
+
     return addPrice;
   };
   static getPrice = async (id_product) => {
@@ -202,6 +203,11 @@ class PriceService {
       },
     ]);
     return getPrice;
+  };
+  static getPriceByIdProduct = async (id_product) => {
+    const ID_PRODUCT = new ObjectId(id_product);
+    const response = await PriceModel.findOne({ ID_PRODUCT: ID_PRODUCT });
+    return response;
   };
 }
 module.exports = PriceService;

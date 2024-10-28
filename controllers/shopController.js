@@ -1,14 +1,32 @@
 const ShopServices = require("../services/shop.services");
 const ShopController = {
-  createShop: async (req, res) => {
+  checkTimeActiveShop: async (req, res) => {
     try {
-      const response = await ShopServices.activeShop(
+      const response = await ShopServices.CheckTimeActive(
         req.user.id,
-        req.body.name_shop
+        req.user.id_user,
+        req.body.name_shop,
+        req.body.desc_shop
       );
       res.status(200).json({
         success: true,
-        message: "tạo mới shop thành công",
+        message: "Kiểm tra thời gian kích hoạt thành công",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  },
+  activeShop: async (req, res) => {
+    try {
+      response = await ShopServices.activeShop(req.params.id);
+      res.status(200).json({
+        success: true,
+        message: "Tài khoản đã được kích hoạt thành công",
         data: response,
       });
     } catch (error) {
@@ -52,6 +70,22 @@ const ShopController = {
       res.status(200).json({
         success: true,
         message: "Lấy thông tin shop thành công",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  },
+  getShopNonActive: async (req, res) => {
+    try {
+      const response = await ShopServices.getShopNonActive();
+      res.status(200).json({
+        success: true,
+        message: "Lấy thông tin shop chưa kích hoạt thành công",
         data: response,
       });
     } catch (error) {

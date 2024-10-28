@@ -35,5 +35,23 @@ const InventoryController = {
       });
     }
   },
+  deleteInventory_Entries: async (req, res) => {
+    try {
+      const deleteInventory_Entries =
+        await Inventory_EntriesService.deleteInventory_Entries(req.params.id);
+      if (!deleteInventory_Entries) {
+        return res
+          .status(404)
+          .json({ message: "Không tìm thấy phiếu nhập kho." });
+      }
+      res.status(200).json({
+        message: "Xóa phiếu nhập kho thành công",
+        success: true,
+        data: deleteInventory_Entries,
+      });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  },
 };
 module.exports = InventoryController;

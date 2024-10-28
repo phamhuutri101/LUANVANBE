@@ -4,6 +4,10 @@ var INVENTORYENTRIES = new Schema({
   CRATED_DATE: {
     type: Date,
   },
+  IS_DELETE: {
+    type: Boolean,
+    default: false,
+  },
   LIST_PRODUCT_CREATED: [
     {
       ID_PRODUCT: {
@@ -16,6 +20,7 @@ var INVENTORYENTRIES = new Schema({
         type: Number,
         default: 0,
       },
+
       DETAILS: {
         type: [
           {

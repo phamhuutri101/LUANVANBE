@@ -20,6 +20,27 @@ class ProductService {
     ]);
     return getProduct;
   };
+  static getProductShop = async (id_account, page = 1, limit = 10) => {
+    page = Number(page);
+    limit = Number(limit);
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const getProduct = await ProductModel.aggregate([
+      {
+        $match: {
+          IS_DELETED: false,
+          ACCOUNT__ID: ID_ACCOUNT,
+        },
+      },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+      {
+        $project: {
+          IS_DELETED: 0,
+        },
+      },
+    ]);
+    return getProduct;
+  };
 
   static getProductsAll = async () => {
     const getProduct = await ProductModel.aggregate([
@@ -177,164 +198,6 @@ class ProductService {
     });
     return product;
   }
-  static async createProductfood(
-    name,
-    code,
-    short_desc,
-    desc_product,
-    category_id,
-    metadata,
-    file_attachments,
-    file_attachmentsdefault,
-    account_id
-  ) {
-    const ACCOUNT__ID = new ObjectId(account_id);
-    const CATEGORY_ID = new ObjectId(category_id);
-    const { sizes, types } = metadata;
-    const listFileAttachments = file_attachments.map((file) => ({
-      FILE_URL: file.file_url,
-      FILE_TYPE: file.file_type,
-      FROM_DATE: new Date(),
-      TO_DATE: null,
-    }));
-    const listFileAttachmentsdefault = file_attachmentsdefault.map((file) => ({
-      FILE_URL: file.file_url,
-      FILE_TYPE: file.file_type,
-      FROM_DATE: new Date(),
-      TO_DATE: null,
-    }));
-    const product = await ProductModel.create({
-      NAME_PRODUCT: name,
-      CODE_PRODUCT: code,
-      SHORT_DESC: short_desc,
-      DESC_PRODUCT: desc_product,
-      // NUMBER_INVENTORY_PRODUCT: quantity,
-      CREATED_AT: new Date(),
-      UPDATED_AT: null,
-      CATEGORY_ID: CATEGORY_ID,
-      LIST_PRODUCT_METADATA: [
-        {
-          KEY: "Kích Cỡ",
-          VALUE: sizes,
-        },
-        {
-          KEY: "Loại",
-          VALUE: types,
-        },
-      ],
-      LIST_FILE_ATTACHMENT: listFileAttachments,
-      ACCOUNT__ID: ACCOUNT__ID,
-      LIST_FILE_ATTACHMENT_DEFAULT: listFileAttachmentsdefault,
-      // QUANTITY_BY_KEY_VALUE: quantityByKeyValue,
-    });
-    return product;
-  }
-  static async createProductphone(
-    name,
-    code,
-    short_desc,
-    desc_product,
-    category_id,
-    metadata,
-    file_attachments,
-    file_attachmentsdefault,
-    account_id
-  ) {
-    const ACCOUNT__ID = new ObjectId(account_id);
-    const CATEGORY_ID = new ObjectId(category_id);
-    const { memorys, colors } = metadata;
-    const listFileAttachments = file_attachments.map((file) => ({
-      FILE_URL: file.file_url,
-      FILE_TYPE: file.file_type,
-      FROM_DATE: new Date(),
-      TO_DATE: null,
-    }));
-    const listFileAttachmentsdefault = file_attachmentsdefault.map((file) => ({
-      FILE_URL: file.file_url,
-      FILE_TYPE: file.file_type,
-      FROM_DATE: new Date(),
-      TO_DATE: null,
-    }));
-    const product = await ProductModel.create({
-      NAME_PRODUCT: name,
-      CODE_PRODUCT: code,
-      SHORT_DESC: short_desc,
-      DESC_PRODUCT: desc_product,
-      // NUMBER_INVENTORY_PRODUCT: number_inventory_product,
-      CREATED_AT: new Date(),
-      UPDATED_AT: null,
-      CATEGORY_ID: CATEGORY_ID,
-      LIST_PRODUCT_METADATA: [
-        {
-          KEY: "Bộ Nhớ",
-          VALUE: memorys,
-        },
-        {
-          KEY: "Màu Sắc",
-          VALUE: colors,
-        },
-      ],
-
-      LIST_FILE_ATTACHMENT: listFileAttachments,
-      // QUANTITY_BY_KEY_VALUE: quantityByKeyValue,
-      LIST_FILE_ATTACHMENT_DEFAULT: listFileAttachmentsdefault,
-      ACCOUNT__ID: ACCOUNT__ID,
-    });
-    return product;
-  }
-  static async createProductEarphone(
-    name,
-    code,
-    short_desc,
-    desc_product,
-    category_id,
-    metadata,
-    file_attachments,
-    file_attachmentsdefault,
-    account_id
-  ) {
-    const ACCOUNT__ID = new ObjectId(account_id);
-    const CATEGORY_ID = new ObjectId(category_id);
-    const { memorys, colors } = metadata;
-    const listFileAttachments = file_attachments.map((file) => ({
-      FILE_URL: file.file_url,
-      FILE_TYPE: file.file_type,
-      FROM_DATE: new Date(),
-      TO_DATE: null,
-    }));
-    const listFileAttachmentsdefault = file_attachmentsdefault.map((file) => ({
-      FILE_URL: file.file_url,
-      FILE_TYPE: file.file_type,
-      FROM_DATE: new Date(),
-      TO_DATE: null,
-    }));
-    const product = await ProductModel.create({
-      NAME_PRODUCT: name,
-      CODE_PRODUCT: code,
-      SHORT_DESC: short_desc,
-      DESC_PRODUCT: desc_product,
-      // NUMBER_INVENTORY_PRODUCT: number_inventory_product,
-      CREATED_AT: new Date(),
-      UPDATED_AT: null,
-      CATEGORY_ID: CATEGORY_ID,
-      LIST_PRODUCT_METADATA: [
-        {
-          KEY: "Bộ Nhớ",
-          VALUE: memorys,
-        },
-        {
-          KEY: "Màu Sắc",
-          VALUE: colors,
-        },
-      ],
-
-      LIST_FILE_ATTACHMENT: listFileAttachments,
-      // QUANTITY_BY_KEY_VALUE: quantityByKeyValue,
-      LIST_FILE_ATTACHMENT_DEFAULT: listFileAttachmentsdefault,
-      ACCOUNT__ID: ACCOUNT__ID,
-    });
-    return product;
-  }
 
   static async updateProduct(
     name,
@@ -410,6 +273,37 @@ class ProductService {
 
     return { deletedProduct };
   };
-}
+  static getProductKeyValue = async (id_product) => {
+    const ID_PRODUCT = new ObjectId(id_product);
+    const result = await ProductModel.aggregate([
+      { $match: { _id: ID_PRODUCT, IS_DELETED: false } },
+      { $unwind: "$QUANTITY_BY_KEY_VALUE" },
+      { $unwind: "$QUANTITY_BY_KEY_VALUE.LIST_MATCH_KEY" }, // Tháo dỡ LIST_MATCH_KEY
+      {
+        $group: {
+          _id: "$QUANTITY_BY_KEY_VALUE.LIST_MATCH_KEY.KEY",
+          VALUE: { $addToSet: "$QUANTITY_BY_KEY_VALUE.LIST_MATCH_KEY.VALUE" }, // Gộp VALUE
+        },
+      },
+      {
+        $project: {
+          KEY: "$_id",
+          VALUE: 1,
+          _id: { $concat: ["ID_", { $toString: "$$ROOT._id" }] }, // Tạo _id mới nếu cần
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          LIST_PRODUCT_METADATA: {
+            $push: { KEY: "$KEY", VALUE: "$VALUE", _id: "$_id" },
+          }, // Tạo danh sách cuối cùng
+        },
+      },
+      { $project: { _id: 0, LIST_PRODUCT_METADATA: 1 } }, // Chỉ giữ lại danh sách
+    ]);
 
+    return result.length > 0 ? result[0] : null; // Trả về kết quả
+  };
+}
 module.exports = ProductService;

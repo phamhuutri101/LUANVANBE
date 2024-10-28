@@ -113,5 +113,21 @@ const priceController = {
       });
     }
   },
+  getPriceByIdProduct: async (req, res) => {
+    try {
+      const response = await PriceService.getPriceByIdProduct(req.params.id);
+      res.status(200).json({
+        success: true,
+        message: "Lấy giá theo id sản phẩm thành công",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  },
 };
 module.exports = priceController;

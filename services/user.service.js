@@ -326,7 +326,6 @@ class UserService {
     );
     return update_user;
   };
-  static userCountArray = [];
 
   static updateUserCountRealtime = async () => {
     try {
@@ -350,11 +349,8 @@ class UserService {
       const totalUserCount =
         userCountResult.length > 0 ? userCountResult[0].count : 0;
 
-      // Đẩy tổng số lượng người dùng vào mảng tĩnh
-      UserService.userCountArray.push(totalUserCount);
-
       // Trả về mảng tĩnh với dữ liệu đã cập nhật
-      return UserService.userCountArray;
+      return totalUserCount;
     } catch (error) {
       console.error("Error in updateUserCountRealtime:", error);
       throw new Error("Failed to update user count.");
