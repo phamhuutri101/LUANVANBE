@@ -4,6 +4,9 @@ var ORDER = new Schema({
   ORDER_CODE: {
     type: String,
   },
+  ORDER_PRICE: {
+    type: Number,
+  },
   ADDRESS_USER: {
     PROVINCE: {
       type: String,

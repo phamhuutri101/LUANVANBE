@@ -4,6 +4,14 @@ var CART = new Schema({
   USER_ID: {
     type: Schema.Types.ObjectId,
   },
+  PRICE_REDUCED: {
+    type: Number,
+    default: 0,
+  },
+  SHIPPING_FEE: {
+    type: Number,
+    default: 0,
+  },
   LIST_PRODUCT: [
     {
       ID_PRODUCT: {
@@ -22,6 +30,7 @@ var CART = new Schema({
       PRICE: {
         type: Number,
       },
+
       LIST_MATCH_KEY: [
         {
           KEY: {

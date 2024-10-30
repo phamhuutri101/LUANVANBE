@@ -102,5 +102,25 @@ const cartController = {
       console.error(error);
     }
   },
+  updateShippingAndPriceReduced: async (req, res) => {
+    try {
+      const response = await CartService.updateShippingAndPriceReduced(
+        req.user.id_user,
+        req.body.priceReduce,
+        req.body.shipping
+      );
+      res.status(200).json({
+        success: true,
+        message: "Cập nhật thành công",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: error.message,
+        success: false,
+        data: null,
+      });
+    }
+  },
 };
 module.exports = cartController;

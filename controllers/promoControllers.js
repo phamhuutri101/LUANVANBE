@@ -49,8 +49,24 @@ const PromoCodeController = {
       });
     } catch (error) {
       res.status(500).json({
-        message: "L��i khi lấy danh sách mã khuyến mãi",
+        message: "Lỗii khi lấy danh sách mã khuyến mãi",
         success: false,
+      });
+    }
+  },
+  checkActivePromoCode: async (req, res) => {
+    try {
+      const response = await PromoCodeService.checkActivePromoCode();
+      res.status(200).json({
+        message: "Kiếm tra thời hạn mã khuyến mãi thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Kiểm tra thời hạn khuyến mãi thất bại",
+        success: false,
+        error: error.message,
       });
     }
   },

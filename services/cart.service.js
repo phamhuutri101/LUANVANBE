@@ -104,7 +104,7 @@ class CartService {
         {
           USER_ID: ID_USER,
           LIST_PRODUCT_MAX_NUMBER: {
-            $lt: 10,
+            $lt: 10000,
           },
         },
         {
@@ -494,38 +494,58 @@ class CartService {
 
       const getCart = await CartModel.aggregate([
         {
+          $unwind: "$LIST_PRODUCT",
+        },
+        {
           $match: {
             USER_ID: ID_USER,
             "LIST_PRODUCT.TO_DATE": null,
           },
         },
-        {
-          $unwind: "$LIST_PRODUCT",
-        },
-        {
-          $match: {
-            "LIST_PRODUCT.TO_DATE": null,
-          },
-        },
-        {
-          $project: {
-            "LIST_PRODUCT.ID_PRODUCT": 1,
-            "LIST_PRODUCT.PRICE": 1,
-            "LIST_PRODUCT.QUANTITY": 1,
-          },
-        },
       ]);
 
       let totalCart = 0;
+      let shipping = 0;
+      let priceReduced = 0;
+      // Lấy shipping_fee và price_reduced từ document đầu tiên vì nó áp dụng cho cả giỏ hàng
+      if (getCart.length > 0) {
+        shipping = getCart[0].SHIPPING_FEE || 0;
+        priceReduced = getCart[0].PRICE_REDUCED || 0;
+      }
+      // Tính tổng giá trị sản phẩm
       getCart.forEach((item) => {
-        totalCart += item.LIST_PRODUCT.QUANTITY * item.LIST_PRODUCT.PRICE;
+        const price = item.LIST_PRODUCT.PRICE || 0;
+        const quantity = item.LIST_PRODUCT.QUANTITY || 0;
+        totalCart += quantity * price;
       });
+      // Áp dụng giảm giá và phí vận chuyển một lần duy nhất
+      totalCart = totalCart - priceReduced + shipping;
 
       return totalCart;
     } catch (error) {
       console.error("Error in getPriceCart:", error);
       throw error; // Throwing the error to be handled by the caller
     }
+  };
+  static updateShippingAndPriceReduced = async (
+    id_user,
+
+    priceReduced,
+    shipping
+  ) => {
+    const ID_USER = new ObjectId(id_user);
+    const response = await CartModel.updateMany(
+      {
+        USER_ID: ID_USER,
+      },
+      {
+        $set: {
+          SHIPPING_FEE: shipping,
+          PRICE_REDUCED: priceReduced,
+        },
+      }
+    );
+    return response;
   };
   static updateCart = async (id_user, id_product, body) => {
     const ID_USER = new ObjectId(id_user);

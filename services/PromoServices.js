@@ -1,3 +1,4 @@
+const { find } = require("../models/account");
 const PromoModel = require("../models/PromoCode");
 const moment = require("moment");
 
@@ -56,6 +57,50 @@ class PromoCodeService {
       discountValue,
       message: "Áp dụng mã giảm giá thành công.",
     };
+  };
+  static checkActivePromoCode = async (code) => {
+    try {
+      // Tìm mã giảm giá
+      const promo = await PromoModel.find();
+
+      // Kiểm tra nếu không tìm thấy mã
+      if (!promo || promo.length === 0) {
+        throw new Error("Mã giảm giá không tồn tại.");
+      }
+
+      const currentDate = new Date();
+      let isValid = false;
+
+      // Kiểm tra từng mã giảm giá
+      for (const item of promo) {
+        const toDate = new Date(item.TO_DATE);
+
+        // Nếu đã hết hạn, cập nhật ACTIVE = false
+        if (toDate < currentDate && item.ACTIVE) {
+          await PromoModel.findByIdAndUpdate(
+            item._id,
+            { ACTIVE: false },
+            { new: true }
+          );
+        }
+
+        // Kiểm tra mã còn hiệu lực không
+        if (toDate >= currentDate && item.ACTIVE) {
+          const fromDate = new Date(item.FROM_DATE);
+          if (currentDate >= fromDate) {
+            isValid = true;
+          }
+        }
+      }
+
+      if (!isValid) {
+        throw new Error("Mã giảm giá không còn hiệu lực.");
+      }
+
+      return promo;
+    } catch (error) {
+      throw error;
+    }
   };
   static getAllPromoCodes = async () => {
     const promos = await PromoModel.find();

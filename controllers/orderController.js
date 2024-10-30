@@ -9,7 +9,8 @@ class OrderController {
         req.body.PROVINCE,
         req.body.DISTRICT,
         req.body.COMMUNE,
-        req.body.DESC
+        req.body.DESC,
+        req.body.PRICE
       );
       if (addOrder.success == false) {
         res.status(200).json({
