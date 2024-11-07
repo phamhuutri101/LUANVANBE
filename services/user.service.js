@@ -356,6 +356,30 @@ class UserService {
       throw new Error("Failed to update user count.");
     }
   };
+  static getUserByAccountId = async (id_account) => {
+    const ID = new ObjectId(id_account);
+    const result = await AccountModel.aggregate([
+      {
+        $match: {
+          _id: ID,
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "USER_ID",
+          foreignField: "_id",
+          as: "user",
+        },
+      },
+      {
+        $unwind: {
+          path: "$user",
+        },
+      },
+    ]);
+    return result;
+  };
 }
 
 module.exports = UserService;

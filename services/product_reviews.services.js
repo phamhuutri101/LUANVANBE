@@ -71,6 +71,51 @@ class ProductReviews {
       console.error(error);
     }
   };
+  static getAllReviews = async (page = 1, limit = 10) => {
+    page = Number(page);
+    limit = Number(limit);
+    try {
+      const response = await ProductReviewsModel.aggregate([
+        {
+          $match: {
+            IS_DELETE: false,
+          },
+        },
+        { $skip: (page - 1) * limit },
+        { $limit: limit },
+        {
+          $lookup: {
+            from: "products",
+            localField: "ID_PRODUCT",
+            foreignField: "_id",
+            as: "product",
+          },
+        },
+        {
+          $unwind: "$product",
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "USER_ID",
+            foreignField: "_id",
+            as: "user",
+          },
+        },
+        {
+          $unwind: "$user",
+        },
+        {
+          $sort: {
+            REVIEW_DATE: -1,
+          },
+        },
+      ]);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  };
 }
 
 module.exports = ProductReviews;

@@ -7,6 +7,14 @@ var ORDER = new Schema({
   ORDER_PRICE: {
     type: Number,
   },
+  PRICE_REDUCED: {
+    type: Number,
+    default: 0,
+  },
+  SHIPPING_FEE: {
+    type: Number,
+    default: 0,
+  },
   ADDRESS_USER: {
     PROVINCE: {
       type: String,

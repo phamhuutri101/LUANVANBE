@@ -113,5 +113,20 @@ const addressController = {
       console.error(error);
     }
   },
+  getAddressByIdUser: async (req, res) => {
+    try {
+      const response = await AddressService.getAddressByIdUser(req.params.id);
+      res.status(200).json({
+        message: "Lấy địa chỉ theo id người dùng thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: error.message,
+        success: false,
+      });
+    }
+  },
 };
 module.exports = addressController;

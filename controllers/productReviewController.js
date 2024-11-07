@@ -1,3 +1,4 @@
+const ProductService = require("../services/product.service");
 const ProductReviewServices = require("../services/product_reviews.services");
 const ProductReviews = {
   addReviews: async (req, res) => {
@@ -64,6 +65,25 @@ const ProductReviews = {
       res.status(500).json({
         message: "Lỗi khi lấy tất cả đánh giá",
         success: false,
+      });
+    }
+  },
+  getAllReviews: async (req, res) => {
+    try {
+      const response = await ProductReviewServices.getAllReviews(
+        req.query.page,
+        req.query.limit
+      );
+      res.status(200).json({
+        message: "Lấy tất cả đánh giá thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Lỗi khi lấy tất cả đánh giá",
+        success: false,
+        error: error.message,
       });
     }
   },

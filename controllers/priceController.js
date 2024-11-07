@@ -7,17 +7,16 @@ const priceController = {
         req.params.id,
         req.body.price_number,
         req.body.key,
-        req.body.value
+        req.body.value,
+        req.user.id
       );
       res.status(200).json({
         message: "Thêm giá thành công",
         success: true,
         data: newPrice,
       });
-    } catch (e) {
-      res.status(500).json({
-        message: e.message,
-      });
+    } catch (error) {
+      res.status(500).json(error.message);
     }
   },
   getPrice: async (req, res) => {
@@ -126,6 +125,45 @@ const priceController = {
         success: false,
         message: error.message,
         data: null,
+      });
+    }
+  },
+  getMinPrice: async (req, res) => {
+    try {
+      const response = await PriceService.addPriceDefaultIsMinPrice(
+        req.params.id
+      );
+      res.status(200).json({
+        success: true,
+        message: "Lấy giá nhỏ nhất thành công",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  },
+  deletePrice: async (req, res) => {
+    try {
+      const response = await PriceService.deletePrice(
+        req.params.id,
+        req.user.id,
+        req.body.key,
+        req.body.value
+      );
+      res.status(200).json({
+        success: true,
+        message: "Xóa giá thành công",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: error.message,
+        success: false,
+        message: "Xóa giá không thành công",
       });
     }
   },

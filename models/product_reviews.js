@@ -1,3 +1,4 @@
+const { boolean } = require("joi");
 var mongoose = require("mongoose");
 var Schema = mongoose.Schema;
 var PRODUCT_REVIEWS = new Schema({
@@ -9,6 +10,10 @@ var PRODUCT_REVIEWS = new Schema({
   },
   NUMBER_OF_START: {
     type: Number,
+  },
+  IS_DELETE: {
+    type: Boolean,
+    default: false,
   },
   NUMBER_OF_REVIEWS: {
     type: Number,

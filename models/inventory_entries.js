@@ -20,7 +20,9 @@ var INVENTORYENTRIES = new Schema({
         type: Number,
         default: 0,
       },
-
+      TOTAL_IMPORT_CONST: {
+        type: Number,
+      },
       DETAILS: {
         type: [
           {

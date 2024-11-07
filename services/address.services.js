@@ -225,6 +225,42 @@ class AddressService {
     );
     return getAddressId;
   };
+  static getAddressByIdUser = async (user_id) => {
+    const USER_ID = new ObjectId(user_id);
+    const getAddressUser = await AddressModel.aggregate([
+      {
+        $match: {
+          USER_ID: USER_ID,
+        },
+      },
+      { $unwind: "$LIST_ADDRESS" },
+      {
+        $group: {
+          _id: "$USER_ID",
+          LIST_ADDRESS_USER: {
+            $push: "$LIST_ADDRESS",
+          },
+        },
+      },
+      { $unwind: "$LIST_ADDRESS_USER" },
+      {
+        $match: {
+          "LIST_ADDRESS_USER.TO_DATE": null,
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: "$LIST_ADDRESS_USER",
+        },
+      },
+      {
+        $match: {
+          IS_DEFAULT: true,
+        },
+      },
+    ]);
+    return getAddressUser;
+  };
   static updateIs_DefaultAddress = async (user_id, id_address) => {
     const USER_ID = new ObjectId(user_id);
     const ADDRESS_ID = new ObjectId(id_address);

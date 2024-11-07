@@ -1,8 +1,16 @@
 const PriceModel = require("../models/price");
 const ObjectId = require("mongoose").Types.ObjectId;
 class PriceService {
-  static addPrice = async (id_product, price_number, key, value) => {
+  static addPrice = async (
+    id_product,
+    price_number,
+    key,
+    value,
+    id_account
+  ) => {
     const ID_PRODUCT = new ObjectId(id_product);
+    const ID_ACCOUNT = new ObjectId(id_account);
+
     let listMatchKeys = [];
     if (
       Array.isArray(key) &&
@@ -19,6 +27,7 @@ class PriceService {
     const addPrice = await PriceModel.updateOne(
       {
         ID_PRODUCT: ID_PRODUCT,
+        ID_ACCOUNT: ID_ACCOUNT,
         LIST_PRICE_MAX_NUMBER: {
           $lt: 100,
         },
@@ -43,6 +52,7 @@ class PriceService {
 
     return addPrice;
   };
+
   static getPrice = async (id_product) => {
     const ID_PRODUCT = new ObjectId(id_product);
     const getALLPrice = PriceModel.aggregate([
@@ -178,6 +188,7 @@ class PriceService {
     ]);
     return getPrice;
   };
+
   static getPriceRange = async (id_product) => {
     const ID_PRODUCT = new ObjectId(id_product);
     const getPrice = await PriceModel.aggregate([
@@ -208,6 +219,61 @@ class PriceService {
     const ID_PRODUCT = new ObjectId(id_product);
     const response = await PriceModel.findOne({ ID_PRODUCT: ID_PRODUCT });
     return response;
+  };
+  static addPriceDefaultIsMinPrice = async (id_product) => {
+    const ID_PRODUCT = new ObjectId(id_product);
+    const product = await PriceModel.findOne(
+      { ID_PRODUCT: ID_PRODUCT },
+      { LIST_PRICE: 1 } // Chỉ lấy mảng LIST_PRICE
+    );
+
+    if (product && product.LIST_PRICE && product.LIST_PRICE.length > 0) {
+      const minPrice = product.LIST_PRICE.reduce((min, current) => {
+        return current.PRICE_NUMBER < min.PRICE_NUMBER ? current : min;
+      });
+      const priceNumber = minPrice.PRICE_NUMBER;
+      const addPriceDefault = this.addPrice(id_product, priceNumber);
+      return addPriceDefault;
+    }
+
+    return null; // Không có giá trị nào trong LIST_PRICE
+  };
+
+  static deletePrice = async (id_product, id_account, keys, values) => {
+    if (
+      !Array.isArray(keys) ||
+      !Array.isArray(values) ||
+      keys.length !== values.length
+    ) {
+      throw new Error("Keys và values phải là mảng và có cùng độ dài.");
+    }
+
+    const ID_PRODUCT = new ObjectId(id_product);
+    const ID_ACCOUNT = new ObjectId(id_account);
+
+    // Tạo điều kiện tìm kiếm để xóa LIST_PRICE với từng cặp key-value trong LIST_MATCH_KEY
+    const matchConditions = keys.map((key, index) => ({
+      $elemMatch: { KEY: key, VALUE: values[index] },
+    }));
+
+    const result = await PriceModel.updateOne(
+      {
+        ID_PRODUCT: ID_PRODUCT,
+        ID_ACCOUNT: ID_ACCOUNT,
+      },
+      {
+        $pull: {
+          LIST_PRICE: {
+            LIST_MATCH_KEY: { $all: matchConditions },
+          },
+        },
+        $inc: {
+          LIST_PRICE_MAX_NUMBER: -1,
+        },
+      }
+    );
+
+    return result;
   };
 }
 module.exports = PriceService;

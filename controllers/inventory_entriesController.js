@@ -1,3 +1,4 @@
+const { response } = require("express");
 const Inventory_EntriesService = require("../services/inventory_entries.service");
 const InventoryController = {
   addInventory_Entries: async (req, res) => {
@@ -38,7 +39,10 @@ const InventoryController = {
   deleteInventory_Entries: async (req, res) => {
     try {
       const deleteInventory_Entries =
-        await Inventory_EntriesService.deleteInventory_Entries(req.params.id);
+        await Inventory_EntriesService.deleteInventoryEntry(
+          req.params.id,
+          req.user.id
+        );
       if (!deleteInventory_Entries) {
         return res
           .status(404)
@@ -51,6 +55,60 @@ const InventoryController = {
       });
     } catch (error) {
       res.status(500).json({ message: error.message });
+    }
+  },
+  getInventory_Entries: async (req, res) => {
+    try {
+      const response = await Inventory_EntriesService.getInventory_Entries(
+        req.user.id
+      );
+      res.status(200).json({
+        message: "Lấy phiếu nhập kho thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        data: null,
+        message: error.message,
+      });
+    }
+  },
+  getInventory_EntriesById: async (req, res) => {
+    try {
+      const response = await Inventory_EntriesService.getInventory_EntriesById(
+        req.params.id,
+        req.user.id
+      );
+      res.status(200).json({
+        message: "Lấy phiếu nhập kho theo ID thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res
+        .status(500)
+        .json({ data: null, success: false, message: error.message });
+    }
+  },
+  getInventory_EntriesByIdProduct: async (req, res) => {
+    try {
+      const response = await Inventory_EntriesService.getInventoryByIdProduct(
+        req.params.id,
+        req.user.id
+      );
+      res.status(200).json({
+        message: "Lấy phiếu nhập kho theo ID sản phẩm thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
     }
   },
 };

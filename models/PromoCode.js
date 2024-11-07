@@ -1,5 +1,5 @@
-const { types } = require("joi");
 var mongoose = require("mongoose");
+var Schema = mongoose.Schema;
 var DISCOUNT = mongoose.Schema({
   CODE: {
     type: String,
@@ -8,6 +8,9 @@ var DISCOUNT = mongoose.Schema({
   DISCOUNT_AMOUNT: {
     type: Number,
   }, // Số tiền giảm cố định
+  ID_ACCOUNT: {
+    type: Schema.Types.ObjectId,
+  },
   DISCOUNT_PERCENTAGE: {
     type: Number,
   }, // Hoặc phần trăm giảm

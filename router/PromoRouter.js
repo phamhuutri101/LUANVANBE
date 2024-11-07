@@ -1,8 +1,13 @@
 const router = require("express").Router();
-
+const verify = require("../middleware/verifyToken");
 const PromoCodeController = require("../controllers/promoControllers");
 router.post("/checkActivePromoCode", PromoCodeController.checkActivePromoCode);
-router.post("/", PromoCodeController.addPromoCode);
+router.post("/", verify.verityToken, PromoCodeController.addPromoCode);
 router.post("/checkPromoCode", PromoCodeController.checkPromoCode);
-router.get("/", PromoCodeController.getAllPromoCodes);
+router.post(
+  "/delete/:id",
+  verify.verityToken,
+  PromoCodeController.deletePromoCodes
+);
+router.get("/", verify.verityToken, PromoCodeController.getAllPromoCodes);
 module.exports = router;

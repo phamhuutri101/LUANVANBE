@@ -8,7 +8,8 @@ const PromoCodeController = {
         req.body.discountAmount,
         req.body.discountPercentage,
         req.body.to_date,
-        req.body.minPurchase
+        req.body.minPurchase,
+        req.user.id
       );
       res.status(200).json({
         message: "lưu khuyến mãi thành công",
@@ -41,7 +42,11 @@ const PromoCodeController = {
   },
   getAllPromoCodes: async (req, res) => {
     try {
-      const promos = await PromoCodeService.getAllPromoCodes();
+      const promos = await PromoCodeService.getAllPromoCodes(
+        req.user.id,
+        req.query.page,
+        req.query.limit
+      );
       res.status(200).json({
         message: "Lấy danh sách mã khuyến mãi thành công",
         success: true,
@@ -51,6 +56,7 @@ const PromoCodeController = {
       res.status(500).json({
         message: "Lỗii khi lấy danh sách mã khuyến mãi",
         success: false,
+        error: error.message,
       });
     }
   },
@@ -65,6 +71,25 @@ const PromoCodeController = {
     } catch (error) {
       res.status(500).json({
         message: "Kiểm tra thời hạn khuyến mãi thất bại",
+        success: false,
+        error: error.message,
+      });
+    }
+  },
+  deletePromoCodes: async (req, res) => {
+    try {
+      const response = await PromoCodeService.deletePromoCodes(
+        req.user.id,
+        req.params.id
+      );
+      res.status(200).json({
+        message: "Xóa mã khuyến mãi thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Lỗi khi xóa mã khuyến mãi",
         success: false,
         error: error.message,
       });

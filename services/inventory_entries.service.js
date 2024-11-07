@@ -1,3 +1,4 @@
+const { response } = require("express");
 const account = require("../models/account");
 const inventory_entriesModel = require("../models/inventory_entries");
 const ProductModel = require("../models/product");
@@ -32,6 +33,7 @@ class Inventory_EntriesService {
         UNIT_PRICE: price,
         QUANTITY: quantity,
         DETAILS: details,
+        TOTAL_IMPORT_CONST: price * quantity,
       },
       CRATED_DATE: new Date(),
       ID_SUPPLIERS: id_supplier,
@@ -107,13 +109,120 @@ class Inventory_EntriesService {
     product.save();
     return product;
   };
-  static getInventory_Entries = async () => {
-    const getInventory_Entries = await inventory_entriesModel.findOne({});
-    return getInventory_Entries;
+  static deleteInventoryEntry = async (inventoryEntryId, accountId) => {
+    const InventoryId = new ObjectId(inventoryEntryId);
+    const ACCOUNT_ID = new ObjectId(accountId);
+    console.log(InventoryId);
+    console.log(ACCOUNT_ID);
+    try {
+      // Tìm phiếu nhập kho cần xóa
+      const inventoryEntry = await inventory_entriesModel.findOne({
+        _id: inventoryEntryId,
+        ACCOUNT__ID: ACCOUNT_ID,
+        IS_DELETE: false,
+      });
+
+      if (!inventoryEntry) {
+        throw new Error("Không tìm thấy phiếu nhập kho");
+      }
+
+      // Lấy thông tin sản phẩm trong phiếu nhập
+      const productCreated = inventoryEntry.LIST_PRODUCT_CREATED[0];
+      if (!productCreated) {
+        throw new Error("Phiếu nhập không có thông tin sản phẩm");
+      }
+
+      // Tìm sản phẩm cần cập nhật số lượng
+      const product = await ProductModel.findOne({
+        _id: productCreated.ID_PRODUCT,
+        ACCOUNT__ID: accountId,
+        IS_DELETED: false,
+      });
+
+      if (!product) {
+        throw new Error("Không tìm thấy sản phẩm");
+      }
+
+      // Giảm số lượng tồn kho chính
+      const newInventory =
+        product.NUMBER_INVENTORY_PRODUCT - productCreated.QUANTITY;
+      if (newInventory < 0) {
+        throw new Error("Số lượng tồn kho không đủ để xóa");
+      }
+
+      // Nếu có chi tiết thuộc tính, cập nhật QUANTITY_BY_KEY_VALUE
+      if (productCreated.DETAILS && productCreated.DETAILS.length > 0) {
+        // Tạo map các cặp key-value từ details
+        const detailMap = new Map();
+        productCreated.DETAILS.forEach((detail) => {
+          detailMap.set(detail.KEY, detail.VALUE);
+        });
+
+        // Cập nhật số lượng trong QUANTITY_BY_KEY_VALUE
+        product.QUANTITY_BY_KEY_VALUE.forEach((qtyItem) => {
+          let isMatch = true;
+          qtyItem.LIST_MATCH_KEY.forEach((matchKey) => {
+            if (detailMap.get(matchKey.KEY) !== matchKey.VALUE[0]) {
+              isMatch = false;
+            }
+          });
+
+          if (isMatch) {
+            qtyItem.QUANTITY -= productCreated.QUANTITY;
+            if (qtyItem.QUANTITY < 0) {
+              throw new Error("Số lượng theo thuộc tính không đủ để xóa");
+            }
+          }
+        });
+      }
+
+      // Cập nhật sản phẩm
+      product.NUMBER_INVENTORY_PRODUCT = newInventory;
+      await product.save();
+
+      // Đánh dấu phiếu nhập đã xóa
+      inventoryEntry.IS_DELETE = true;
+      await inventoryEntry.save();
+
+      return {
+        message: "Xóa phiếu nhập kho thành công",
+        inventoryEntry,
+        product,
+      };
+    } catch (error) {
+      throw error;
+    }
   };
 
-  static getInventory_EntriesById = async (id) => {
-    const getInventory_Entries = await inventory_entriesModel.findById(id);
+  static getInventory_Entries = async (id_account) => {
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const getInventory_Entries = await inventory_entriesModel.find({
+      ACCOUNT__ID: ID_ACCOUNT,
+      IS_DELETE: false,
+    });
+    return getInventory_Entries;
+  };
+  static getInventoryByIdProduct = async (id_product, id_account) => {
+    const ID_PRODUCT = new ObjectId(id_product);
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const response = await inventory_entriesModel.aggregate([
+      {
+        $match: {
+          ACCOUNT__ID: ID_ACCOUNT,
+          IS_DELETE: false,
+          LIST_PRODUCT_CREATED: { $elemMatch: { ID_PRODUCT: ID_PRODUCT } },
+        },
+      },
+    ]);
+    return response;
+  };
+  static getInventory_EntriesById = async (id, id_account) => {
+    const ID = new ObjectId(id);
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const getInventory_Entries = await inventory_entriesModel.findOne({
+      _id: ID,
+      ACCOUNT__ID: ID_ACCOUNT,
+    });
     return getInventory_Entries;
   };
 

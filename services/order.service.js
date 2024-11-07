@@ -16,7 +16,9 @@ class OrderService {
     district,
     commune,
     desc,
-    price
+    price,
+    reduce,
+    shipping
   ) => {
     try {
       const ID_USER = new ObjectId(id_user);
@@ -42,6 +44,8 @@ class OrderService {
         const newOrder = await OrderModel.create({
           ORDER_CODE: null,
           ORDER_PRICE: price,
+          PRICE_REDUCED: reduce,
+          SHIPPING_FEE: shipping,
           PHONE_USER: PhoneUser,
           LIST_PRODUCT: ListProduct,
           ACCOUNT__ID: ID_ACCOUNT,

@@ -131,5 +131,20 @@ const userController = {
         .json({ message: "lỗi khi cập nhật dữ liệu", success: false });
     }
   },
+  getUserByAccountId: async (req, res) => {
+    try {
+      const response = await UserService.getUserByAccountId(req.params.id);
+      res.status(200).json({
+        message: "Lấy thông tin người dùng theo tài khoản thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: error.message,
+        success: false,
+      });
+    }
+  },
 };
 module.exports = userController;

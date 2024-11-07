@@ -4,6 +4,7 @@ const router = require("express").Router();
 // router.get("/", verify.verityToken, addressController.showAddress);
 router.post("/", verify.verityToken, addressController.addAddress);
 router.put("/:id", verify.verityToken, addressController.updateAddress);
+router.get("/getUserByIdUser/:id", addressController.getAddressByIdUser);
 router.get(
   "/default/",
   verify.verityToken,

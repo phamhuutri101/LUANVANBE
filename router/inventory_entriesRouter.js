@@ -7,7 +7,23 @@ router.post(
   verify.verityToken,
   InventoryController.addInventory_Entries
 );
-router.put(
+// router.put(
+//   "/delete/:id",
+//   verify.verityToken,
+//   InventoryController.deleteInventory_Entries
+// );
+router.get(
+  "/getByIdProduct/:id",
+  verify.verityToken,
+  InventoryController.getInventory_EntriesByIdProduct
+);
+router.get("/", verify.verityToken, InventoryController.getInventory_Entries);
+router.get(
+  "/:id",
+  verify.verityToken,
+  InventoryController.getInventory_EntriesById
+);
+router.delete(
   "/delete/:id",
   verify.verityToken,
   InventoryController.deleteInventory_Entries

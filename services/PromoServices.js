@@ -1,4 +1,4 @@
-const { find } = require("../models/account");
+const ObjectId = require("mongoose").Types.ObjectId;
 const PromoModel = require("../models/PromoCode");
 const moment = require("moment");
 
@@ -8,15 +8,18 @@ class PromoCodeService {
     discountAmount,
     discountPercentage,
     to_date,
-    minPurchase
+    minPurchase,
+    id_account
   ) => {
     const existingCode = await PromoModel.findOne({ code });
     if (existingCode) {
       return "Mã khuyến mãi đã tồn tại";
     }
-    const formattedDate = moment(to_date, "DD/MM/YYYY").format("YYYY-MM-DD");
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const formattedDate = moment(to_date, "YYYY-MM-DD").format("YYYY-MM-DD");
     const newPromo = new PromoModel({
       CODE: code,
+      ID_ACCOUNT: ID_ACCOUNT,
       DISCOUNT_AMOUNT: discountAmount || null,
       DISCOUNT_PERCENTAGE: discountPercentage || null,
       TO_DATE: formattedDate,
@@ -102,9 +105,38 @@ class PromoCodeService {
       throw error;
     }
   };
-  static getAllPromoCodes = async () => {
-    const promos = await PromoModel.find();
+  static getAllPromoCodes = async (id_account, page = 1, limit = 10) => {
+    page = Number(page);
+    limit = Number(limit);
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const promos = await PromoModel.aggregate([
+      {
+        $match: {
+          ID_ACCOUNT: ID_ACCOUNT,
+          ACTIVE: true,
+        },
+      },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+    ]);
     return promos;
+  };
+  static deletePromoCodes = async (id_account, id_promo) => {
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const ID_PROMO = new ObjectId(id_promo);
+    const response = await PromoModel.updateOne(
+      {
+        _id: ID_PROMO,
+        ID_ACCOUNT: ID_ACCOUNT,
+      },
+      {
+        ACTIVE: false,
+      }
+    );
+    if (!response) {
+      throw new Error("Không tìm thấy mã giảm giá.");
+    }
+    return response;
   };
 }
 module.exports = PromoCodeService;

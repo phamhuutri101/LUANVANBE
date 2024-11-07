@@ -1,6 +1,7 @@
 const userController = require("../controllers/userController");
 const verify = require("../middleware/verifyToken");
 const router = require("express").Router();
+router.get("/getUserByAccountId/:id", userController.getUserByAccountId);
 router.get(
   "/realtimeUser",
   verify.verityToken,
