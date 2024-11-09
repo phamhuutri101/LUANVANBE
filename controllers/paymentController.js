@@ -20,7 +20,8 @@ const paymentController = {
       const payment = await PaymentMethod.payment(price);
       await OrderService.updateOrderCode(payment.orderId);
       await CartService.deleteAllCart(req.user.id_user);
-      await OrderService.statusOrder2(req.user.id);
+      await OrderService.statusOrder5(req.user.id);
+      await OrderService.statusOrder1(req.user.id);
       res.status(200).json(payment);
     } catch (error) {
       res.status(500).json({
@@ -61,6 +62,7 @@ const paymentController = {
       const cod = await OrderService.updateStatusCOD(code, "COD");
       CartService.deleteAllCart(req.user.id_user);
       await OrderService.statusOrder2COD(req.user.id);
+      await OrderService.statusOrder1(req.user.id);
       res.status(200).json({
         message: "success",
         success: true,
@@ -123,7 +125,8 @@ const paymentController = {
       await OrderService.updateOrderCode(code);
       if (result.data.return_code == 1) {
         await CartService.deleteAllCart(req.user.id_user);
-        await OrderService.statusOrder2(req.user.id);
+        await OrderService.statusOrder5(req.user.id);
+        await OrderService.statusOrder1(req.user.id);
       }
 
       return res.status(200).json(result.data);

@@ -43,7 +43,7 @@ const priceController = {
     try {
       const updatePrice = await PriceService.updatePrice(
         req.params.id_product,
-        req.params.id_list_price,
+        req.body.id_list_price,
         req.body.price_number
       );
       res.status(200).json({
@@ -150,9 +150,8 @@ const priceController = {
     try {
       const response = await PriceService.deletePrice(
         req.params.id,
-        req.user.id,
-        req.body.key,
-        req.body.value
+
+        req.body.id_array
       );
       res.status(200).json({
         success: true,
@@ -164,6 +163,26 @@ const priceController = {
         error: error.message,
         success: false,
         message: "Xóa giá không thành công",
+      });
+    }
+  },
+  getKeyValueListPrice: async (req, res) => {
+    try {
+      const response = await PriceService.getKeyValueListPrice(
+        req.params.id,
+        req.user.id,
+        req.body.id_array
+      );
+      res.status(200).json({
+        success: true,
+        message: "Lấy danh sách giá thành công",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: error.message,
+        success: false,
+        message: "Lỗii khi lấy danh sách giá",
       });
     }
   },

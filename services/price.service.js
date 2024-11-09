@@ -1,4 +1,5 @@
 const PriceModel = require("../models/price");
+const InventoryEntriesModel = require("../models/inventory_entries");
 const ObjectId = require("mongoose").Types.ObjectId;
 class PriceService {
   static addPrice = async (
@@ -11,11 +12,25 @@ class PriceService {
     const ID_PRODUCT = new ObjectId(id_product);
     const ID_ACCOUNT = new ObjectId(id_account);
 
+    // Kiểm tra sản phẩm có trong kho không
+    const inventoryCheck = await InventoryEntriesModel.findOne({
+      "LIST_PRODUCT_CREATED.ID_PRODUCT": ID_PRODUCT,
+      IS_DELETE: false,
+    });
+
+    if (!inventoryCheck) {
+      return {
+        error:
+          "Sản phẩm chưa nhập kho. Vui lòng nhập kho sản phẩm trước khi thêm giá.",
+      };
+    }
+
+    // Xử lý danh sách LIST_MATCH_KEY từ key và value
     let listMatchKeys = [];
     if (
       Array.isArray(key) &&
       Array.isArray(value) &&
-      key.length == value.length
+      key.length === value.length
     ) {
       for (let i = 0; i < key.length; i++) {
         listMatchKeys.push({
@@ -24,33 +39,64 @@ class PriceService {
         });
       }
     }
-    const addPrice = await PriceModel.updateOne(
-      {
-        ID_PRODUCT: ID_PRODUCT,
-        ID_ACCOUNT: ID_ACCOUNT,
-        LIST_PRICE_MAX_NUMBER: {
-          $lt: 100,
-        },
+
+    // Kiểm tra xem giá với các thuộc tính tương ứng đã tồn tại chưa
+    const existingPrice = await PriceModel.findOne({
+      ID_PRODUCT: ID_PRODUCT,
+      ID_ACCOUNT: ID_ACCOUNT,
+      "LIST_PRICE.LIST_MATCH_KEY": {
+        $all: listMatchKeys.map((item) => ({ $elemMatch: item })),
       },
-      {
-        $push: {
-          LIST_PRICE: {
-            PRICE_NUMBER: price_number,
-            FROM_DATE: new Date(),
-            TO_DATE: null,
-            LIST_MATCH_KEY: listMatchKeys,
+      "LIST_PRICE.TO_DATE": null, // Chỉ kiểm tra các giá trị hiện tại (TO_DATE = null)
+    });
+
+    if (existingPrice) {
+      // Nếu giá tồn tại, cập nhật `PRICE_NUMBER` và `FROM_DATE`
+      const updatedPrice = await PriceModel.updateOne(
+        {
+          ID_PRODUCT: ID_PRODUCT,
+          ID_ACCOUNT: ID_ACCOUNT,
+          "LIST_PRICE.LIST_MATCH_KEY": {
+            $all: listMatchKeys.map((item) => ({ $elemMatch: item })),
+          },
+          "LIST_PRICE.TO_DATE": null,
+        },
+        {
+          $set: {
+            "LIST_PRICE.$.PRICE_NUMBER": price_number,
+            "LIST_PRICE.$.FROM_DATE": new Date(),
+          },
+        }
+      );
+      return updatedPrice;
+    } else {
+      // Nếu giá chưa tồn tại, thêm mới vào LIST_PRICE
+      const addPrice = await PriceModel.updateOne(
+        {
+          ID_PRODUCT: ID_PRODUCT,
+          ID_ACCOUNT: ID_ACCOUNT,
+          LIST_PRICE_MAX_NUMBER: { $lt: 100 },
+        },
+        {
+          $push: {
+            LIST_PRICE: {
+              PRICE_NUMBER: price_number,
+              FROM_DATE: new Date(),
+              TO_DATE: null,
+              LIST_MATCH_KEY: listMatchKeys,
+            },
+          },
+          $inc: {
+            LIST_PRICE_MAX_NUMBER: 1,
           },
         },
-        $inc: {
-          LIST_PRICE_MAX_NUMBER: 1,
-        },
-      },
-      {
-        upsert: true,
-      }
-    );
+        {
+          upsert: true,
+        }
+      );
 
-    return addPrice;
+      return addPrice;
+    }
   };
 
   static getPrice = async (id_product) => {
@@ -90,17 +136,16 @@ class PriceService {
     return getALLPrice;
   };
   static updatePrice = async (id_product, id_list_price, price_number) => {
+    console.log(id_product, id_list_price, price_number);
+
     const ID_PRODUCT = new ObjectId(id_product);
     const ID_LIST_PRICE = new ObjectId(id_list_price);
+
     const update = await PriceModel.updateOne(
       {
         ID_PRODUCT: ID_PRODUCT,
-        LIST_PRICE: {
-          $elemMatch: {
-            TO_DATE: null,
-            _id: ID_LIST_PRICE,
-          },
-        },
+        "LIST_PRICE._id": ID_LIST_PRICE,
+        "LIST_PRICE.TO_DATE": null, // Đảm bảo điều kiện này khớp với mục có TO_DATE = null
       },
       {
         $set: {
@@ -109,15 +154,13 @@ class PriceService {
         },
       },
       {
-        arrayFilters: [
-          {
-            "element._id": ID_LIST_PRICE,
-          },
-        ],
+        arrayFilters: [{ "element._id": ID_LIST_PRICE }],
       }
     );
+
     return update;
   };
+
   static getPriceProduct = async (id_product, keys, values) => {
     const ID_PRODUCT = new ObjectId(id_product);
     const matchConditions = keys.map((key, index) => ({
@@ -239,32 +282,18 @@ class PriceService {
     return null; // Không có giá trị nào trong LIST_PRICE
   };
 
-  static deletePrice = async (id_product, id_account, keys, values) => {
-    if (
-      !Array.isArray(keys) ||
-      !Array.isArray(values) ||
-      keys.length !== values.length
-    ) {
-      throw new Error("Keys và values phải là mảng và có cùng độ dài.");
-    }
-
+  static deletePrice = async (id_product, id_array) => {
     const ID_PRODUCT = new ObjectId(id_product);
-    const ID_ACCOUNT = new ObjectId(id_account);
-
-    // Tạo điều kiện tìm kiếm để xóa LIST_PRICE với từng cặp key-value trong LIST_MATCH_KEY
-    const matchConditions = keys.map((key, index) => ({
-      $elemMatch: { KEY: key, VALUE: values[index] },
-    }));
+    const ID_LIST_PRICE = new ObjectId(id_array);
 
     const result = await PriceModel.updateOne(
       {
         ID_PRODUCT: ID_PRODUCT,
-        ID_ACCOUNT: ID_ACCOUNT,
       },
       {
         $pull: {
           LIST_PRICE: {
-            LIST_MATCH_KEY: { $all: matchConditions },
+            _id: ID_LIST_PRICE, // Xóa phần tử trong LIST_PRICE có _id khớp
           },
         },
         $inc: {
@@ -274,6 +303,34 @@ class PriceService {
     );
 
     return result;
+  };
+  static getKeyValueListPrice = async (id_product, id_account, id_array) => {
+    const ID_PRODUCT = new ObjectId(id_product);
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const ID_LIST_PRICE = new ObjectId(id_array);
+
+    const response = await PriceModel.aggregate([
+      {
+        $match: {
+          ID_PRODUCT: ID_PRODUCT,
+          ID_ACCOUNT: ID_ACCOUNT,
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          LIST_PRICE: {
+            $filter: {
+              input: "$LIST_PRICE",
+              as: "price",
+              cond: { $eq: ["$$price._id", ID_LIST_PRICE] },
+            },
+          },
+        },
+      },
+    ]);
+
+    return response;
   };
 }
 module.exports = PriceService;

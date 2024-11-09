@@ -7,14 +7,15 @@ router.post(
   verify.checkPermissionShopper,
   priceController.addPrice
 );
-router.post(
-  "/deletePrice/:id",
-  verify.verityToken,
-  priceController.deletePrice
-);
+router.post("/deletePrice/:id", priceController.deletePrice);
 
 router.post("/get_price/:id", priceController.getPrice);
-router.put("/:id_product/:id_list_price", priceController.updatePrice);
+router.post("/updatePrice/:id_product", priceController.updatePrice);
+router.post(
+  "/get_priceArray/:id",
+  verify.verityToken,
+  priceController.getKeyValueListPrice
+);
 router.get("/addPriceDefault/:id", priceController.getMinPrice);
 router.get("/getById/:id", priceController.getPriceByIdProduct);
 router.get("/:id_product", priceController.getPriceProduct);

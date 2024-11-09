@@ -11,11 +11,18 @@ const PromoCodeController = {
         req.body.minPurchase,
         req.user.id
       );
-      res.status(200).json({
-        message: "lưu khuyến mãi thành công",
-        success: true,
-        data: response,
-      });
+      if (!response) {
+        return res.status(400).json({
+          message: "mã khuyến mãi trùng",
+          success: false,
+        });
+      } else {
+        return res.status(200).json({
+          message: "Thêm mã khuyến mãi thành công",
+          success: true,
+          data: response,
+        });
+      }
     } catch (error) {
       res.status(400).json({
         message: "Lỗi khi thêm Mã khuyến mãi",

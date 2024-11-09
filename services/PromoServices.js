@@ -13,7 +13,7 @@ class PromoCodeService {
   ) => {
     const existingCode = await PromoModel.findOne({ code });
     if (existingCode) {
-      return "Mã khuyến mãi đã tồn tại";
+      return null;
     }
     const ID_ACCOUNT = new ObjectId(id_account);
     const formattedDate = moment(to_date, "YYYY-MM-DD").format("YYYY-MM-DD");

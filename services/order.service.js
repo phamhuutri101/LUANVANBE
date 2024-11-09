@@ -125,33 +125,8 @@ class OrderService {
     }
   };
 
-  // trạng thái chờ thanh toán
-  static statusOrder1 = async (id_account) => {
-    const ID_ACCOUNT = new ObjectId(id_account);
-    const lastOrder = await OrderModel.findOne({
-      ACCOUNT__ID: ID_ACCOUNT,
-    }).sort({ _id: -1 });
-    if (lastOrder) {
-      const updateStatus = await OrderModel.updateOne(
-        {
-          _id: lastOrder.id,
-        },
-        {
-          $set: {
-            LIST_STATUS: {
-              STATUS_NAME: "Chờ thanh toán",
-              STATUS_CODE: 1,
-              FROM_DATE: new Date(),
-              TO_DATE: null,
-            },
-          },
-        }
-      );
-      return updateStatus;
-    }
-  };
   // trạng thái đã thanh toán
-  static statusOrder2 = async (id_account) => {
+  static statusOrder5 = async (id_account) => {
     const ID_ACCOUNT = new ObjectId(id_account);
     const lastOrder = await OrderModel.findOne({
       ACCOUNT__ID: ID_ACCOUNT,
@@ -183,8 +158,8 @@ class OrderService {
         {
           $push: {
             LIST_STATUS: {
-              STATUS_NAME: "Đã thanh toán",
-              STATUS_CODE: 2,
+              STATUS_NAME: "Đã thanh toán Online",
+              STATUS_CODE: 5,
               FROM_DATE: new Date(),
               TO_DATE: null,
             },
@@ -238,6 +213,207 @@ class OrderService {
         }
       );
       return updateStatus;
+    }
+  };
+  // Trạng thái chờ thanh toán
+  static statusOrder0 = async (id_account) => {
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const lastOrder = await OrderModel.findOne({
+      ACCOUNT__ID: ID_ACCOUNT,
+    }).sort({ _id: -1 });
+    if (lastOrder) {
+      const updateStatus = await OrderModel.updateOne(
+        { _id: lastOrder.id },
+        {
+          $push: {
+            LIST_STATUS: {
+              STATUS_NAME: "Chờ thanh toán",
+              STATUS_CODE: 0,
+              FROM_DATE: new Date(),
+              TO_DATE: null,
+            },
+          },
+        }
+      );
+      return updateStatus;
+    }
+  };
+
+  // Trạng thái chờ xác nhận
+  static statusOrder1 = async (id_account) => {
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const lastOrder = await OrderModel.findOne({
+      ACCOUNT__ID: ID_ACCOUNT,
+    }).sort({ _id: -1 });
+    if (lastOrder) {
+      const updateStatus = await OrderModel.updateOne(
+        { _id: lastOrder.id },
+        {
+          $push: {
+            LIST_STATUS: {
+              STATUS_NAME: "Chờ xác nhận",
+              STATUS_CODE: 1,
+              FROM_DATE: new Date(),
+              TO_DATE: null,
+            },
+          },
+        }
+      );
+      return updateStatus;
+    }
+  };
+  static statusOrder3 = async (id_account, id_order) => {
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const ID_ORDER = new ObjectId(id_order);
+    const lastOrder = await OrderModel.findOne({
+      ACCOUNT__ID: ID_ACCOUNT,
+      _id: ID_ORDER,
+    }).sort({ _id: -1 });
+    if (lastOrder) {
+      await OrderModel.updateOne(
+        {
+          _id: lastOrder._id,
+          "LIST_STATUS.TO_DATE": null,
+        },
+        {
+          $set: {
+            "LIST_STATUS.$.TO_DATE": new Date(),
+          },
+        }
+      );
+      const updateStatus = await OrderModel.updateOne(
+        {
+          _id: lastOrder._id,
+        },
+        {
+          $push: {
+            LIST_STATUS: {
+              STATUS_NAME: "đã xác nhận",
+              STATUS_CODE: 3,
+              FROM_DATE: new Date(),
+              TO_DATE: null,
+            },
+          },
+        }
+      );
+      return updateStatus;
+    }
+  };
+  static statusOrder4 = async (id_account, id_order) => {
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const ID_ORDER = new ObjectId(id_order);
+    const lastOrder = await OrderModel.findOne({
+      ACCOUNT__ID: ID_ACCOUNT,
+      _id: ID_ORDER,
+    }).sort({ _id: -1 });
+    // lastOrder.LIST_PRODUCT[0].ID_PRODUCT
+    // lastOrder.LIST_PRODUCT[0].NUMBER_PRODUCT
+    // lastOrder.LIST_PRODUCT[0].ID_KEY_VALUE
+    if (lastOrder) {
+      await OrderModel.updateOne(
+        {
+          _id: lastOrder._id,
+          "LIST_STATUS.TO_DATE": null,
+        },
+        {
+          $set: {
+            "LIST_STATUS.$.TO_DATE": new Date(),
+          },
+        }
+      );
+
+      const updateStatus = await OrderModel.updateOne(
+        {
+          _id: lastOrder._id,
+        },
+        {
+          $push: {
+            LIST_STATUS: {
+              STATUS_NAME: "đã gửi hàng",
+              STATUS_CODE: 4,
+              FROM_DATE: new Date(),
+              TO_DATE: null,
+            },
+          },
+        }
+      );
+      return updateStatus;
+    }
+  };
+  static statusOrder6 = async (id_account, id_order) => {
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const ID_ORDER = new ObjectId(id_order);
+
+    const lastOrder = await OrderModel.findOne({
+      ACCOUNT__ID: ID_ACCOUNT,
+      _id: ID_ORDER,
+    }).sort({ _id: -1 });
+
+    if (lastOrder) {
+      // Cập nhật trường IS_PAYMENT
+      await OrderModel.updateOne(
+        {
+          _id: lastOrder._id,
+        },
+        {
+          $set: {
+            IS_PAYMENT: true,
+            TIME_PAYMENT: new Date(),
+          },
+        }
+      );
+
+      // Cập nhật TO_DATE trong LIST_STATUS cho mục cuối cùng
+      await OrderModel.updateOne(
+        {
+          _id: lastOrder._id,
+          "LIST_STATUS.TO_DATE": null,
+        },
+        {
+          $set: {
+            "LIST_STATUS.$.TO_DATE": new Date(),
+          },
+        }
+      );
+
+      // Thêm trạng thái mới vào LIST_STATUS
+      const updateStatus = await OrderModel.updateOne(
+        {
+          _id: lastOrder._id,
+        },
+        {
+          $push: {
+            LIST_STATUS: {
+              STATUS_NAME: "đã nhận hàng",
+              STATUS_CODE: 6,
+              FROM_DATE: new Date(),
+              TO_DATE: null,
+            },
+          },
+        }
+      );
+
+      return updateStatus;
+    }
+  };
+  static getLastOrderStatus = async (idOrder) => {
+    try {
+      // Tìm order theo idOrder
+      const order = await OrderModel.findById(idOrder).select("LIST_STATUS");
+
+      // Kiểm tra nếu order không tồn tại hoặc LIST_STATUS trống
+      if (!order || order.LIST_STATUS.length === 0) {
+        return null; // hoặc trả về giá trị mặc định nếu không có
+      }
+
+      // Lấy STATUS_CODE của phần tử cuối trong LIST_STATUS
+      const lastStatusCode =
+        order.LIST_STATUS[order.LIST_STATUS.length - 1].STATUS_CODE;
+
+      return lastStatusCode;
+    } catch (error) {
+      console.error("Lỗi khi lấy STATUS_CODE:", error);
+      throw error;
     }
   };
   // static updateNumberProduct = async (id_user, keys, values) => {
