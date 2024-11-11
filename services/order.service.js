@@ -521,15 +521,21 @@ class OrderService {
       throw new Error(error.message);
     }
   };
-  static getUserOrder = async (id_account) => {
+  static getUserOrder = async (id_account, page = 1, limit = 10) => {
     const ID_ACCOUNT = new ObjectId(id_account);
+    page = Number(page);
+    limit = Number(limit);
     const order = await OrderModel.aggregate([
       {
         $match: {
           ACCOUNT__ID: ID_ACCOUNT,
           TIME_PAYMENT: { $ne: null },
+
+          IS_DELETE: false,
         },
       },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
       {
         $lookup: {
           from: "products",
@@ -640,6 +646,18 @@ class OrderService {
     const ID_ORDER = new ObjectId(idOrder);
     const order = await OrderModel.findById(ID_ORDER);
     return order;
+  };
+  static deleteOrder = async (idOrder) => {
+    const ID_ORDER = new ObjectId(idOrder);
+    const deletedOrder = await OrderModel.updateOne(
+      {
+        _id: ID_ORDER,
+      },
+      {
+        IS_DELETE: true,
+      }
+    );
+    return deletedOrder;
   };
 }
 

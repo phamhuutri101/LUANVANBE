@@ -87,6 +87,24 @@ const ProductReviews = {
       });
     }
   },
+  getTotalReviewShop: async (req, res) => {
+    try {
+      const response = await ProductReviewServices.getTotalReviews(
+        req.params.id
+      );
+      res.status(200).json({
+        message: "Lấy t��ng số đánh giá thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "L��i khi lấy t��ng số đánh giá",
+        success: false,
+        error: error.message,
+      });
+    }
+  },
 };
 
 module.exports = ProductReviews;

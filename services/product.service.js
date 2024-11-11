@@ -42,6 +42,25 @@ class ProductService {
     return getProduct;
   };
 
+  static getTotalProductShop = async (id_account) => {
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const getProduct = await ProductModel.aggregate([
+      {
+        $match: {
+          IS_DELETED: false,
+          ACCOUNT__ID: ID_ACCOUNT,
+        },
+      },
+
+      {
+        $project: {
+          IS_DELETED: 0,
+        },
+      },
+    ]);
+    return getProduct.length;
+  };
+
   static getProductsAll = async () => {
     const getProduct = await ProductModel.aggregate([
       {

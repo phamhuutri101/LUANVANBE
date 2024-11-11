@@ -2,6 +2,11 @@ const router = require("express").Router();
 const productController = require("../controllers/productController");
 const verify = require("../middleware/verifyToken");
 router.get(
+  "/getProductShopByIdAccount/:id",
+  productController.getProductShopByIdAccount
+);
+router.get("/getProductTotalShop/:id", productController.getTotalProductShop);
+router.get(
   "/getKV/:id",
   productController.getProductKeyValue,
   verify.verityToken

@@ -21,7 +21,11 @@ class ProductController {
   };
   static getProductShop = async (req, res) => {
     try {
-      const response = await ProductService.getProductShop(req.user.id);
+      const response = await ProductService.getProductShop(
+        req.user.id,
+        req.query.page,
+        req.query.limit
+      );
       res.status(200).json({
         message: "Lấy sản phẩm của shop thành công",
         success: true,
@@ -33,7 +37,24 @@ class ProductController {
       });
     }
   };
-
+  static getProductShopByIdAccount = async (req, res) => {
+    try {
+      const response = await ProductService.getProductShop(
+        req.params.id,
+        req.query.page,
+        req.query.limit
+      );
+      res.status(200).json({
+        message: "Lấy sản phẩm của shop thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: error.message,
+      });
+    }
+  };
   static searchProducts = async (req, res) => {
     try {
       const { query, page, limit } = req.query;
@@ -253,6 +274,22 @@ class ProductController {
       });
     } catch (error) {
       res.status(500).json({ error: error.message });
+    }
+  };
+  static getTotalProductShop = async (req, res) => {
+    try {
+      const response = await ProductService.getTotalProductShop(req.params.id);
+      res.status(200).json({
+        message: "Lấy t��ng số sản phẩm trong shop thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "lấy tổng số sản phẩm trong shop thất bại",
+        success: false,
+        error: error.message,
+      });
     }
   };
 }

@@ -165,6 +165,18 @@ class ShopServices {
       throw error;
     }
   };
+  static getNameShopByIdAccount = async (id_account) => {
+    const ACCOUNT_ID = new ObjectId(id_account);
+    try {
+      const response = await ShopModel.findOne({
+        ID_ACCOUNT: ACCOUNT_ID,
+        IS_ACTIVE: true,
+      });
+      return response.SHOP_NAME;
+    } catch (error) {
+      console.error(error);
+    }
+  };
 }
 
 module.exports = ShopServices;

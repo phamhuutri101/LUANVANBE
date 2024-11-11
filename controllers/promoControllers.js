@@ -50,6 +50,26 @@ const PromoCodeController = {
   getAllPromoCodes: async (req, res) => {
     try {
       const promos = await PromoCodeService.getAllPromoCodes(
+        req.params.id,
+        req.query.page,
+        req.query.limit
+      );
+      res.status(200).json({
+        message: "Lấy danh sách mã khuyến mãi thành công",
+        success: true,
+        data: promos,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Lỗii khi lấy danh sách mã khuyến mãi",
+        success: false,
+        error: error.message,
+      });
+    }
+  },
+  getAllPromoCodeShopper: async (req, res) => {
+    try {
+      const promos = await PromoCodeService.getAllPromoCodes(
         req.user.id,
         req.query.page,
         req.query.limit

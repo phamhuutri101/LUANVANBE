@@ -40,7 +40,11 @@ class OrderController {
   };
   static getUserOrder = async (req, res) => {
     try {
-      const response = await OrderService.getUserOrder(req.user.id);
+      const response = await OrderService.getUserOrder(
+        req.user.id,
+        req.query.page,
+        req.query.limit
+      );
       res.status(200).json({
         success: true,
         message: "Lấy thông tin đơn hàng thành công",
@@ -154,6 +158,22 @@ class OrderController {
       res.status(200).json({
         success: true,
         message: "Lấy thông tin trạng thái đơn hàng gần nhất",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  };
+  static deleteOrder = async (req, res, next) => {
+    try {
+      const response = await OrderService.deleteOrder(req.params.id);
+      res.status(200).json({
+        success: true,
+        message: "Xóa đơn hàng thành công",
         data: response,
       });
     } catch (error) {

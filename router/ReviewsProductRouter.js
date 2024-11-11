@@ -13,5 +13,6 @@ router.get(
   verify.verityToken,
   ProductReviewsController.getTotalReviewsByIdProduct
 );
+router.get("/getTotalReview/:id", ProductReviewsController.getTotalReviewShop);
 
 module.exports = router;

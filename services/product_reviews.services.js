@@ -116,6 +116,26 @@ class ProductReviews {
       console.error(error);
     }
   };
+  static getTotalReviews = async (id_user) => {
+    const USER_ID = new ObjectId(id_user);
+    try {
+      const response = await ProductReviewsModel.aggregate([
+        {
+          $match: {
+            IS_DELETE: false,
+            USER_ID: USER_ID,
+          },
+        },
+        {
+          $count: "totalReviews",
+        },
+      ]);
+
+      return response.length > 0 ? response[0].totalReviews : 0;
+    } catch (error) {
+      console.error(error);
+    }
+  };
 }
 
 module.exports = ProductReviews;

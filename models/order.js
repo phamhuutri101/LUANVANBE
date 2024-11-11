@@ -15,6 +15,10 @@ var ORDER = new Schema({
     type: Number,
     default: 0,
   },
+  IS_DELETE: {
+    type: Boolean,
+    default: false,
+  },
   ADDRESS_USER: {
     PROVINCE: {
       type: String,
