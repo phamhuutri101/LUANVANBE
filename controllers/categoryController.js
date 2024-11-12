@@ -145,6 +145,49 @@ class categoryController {
       res.status(400).json({ error: error.message });
     }
   };
+
+  // Hàm lấy tất cả danh mục có sản phẩm được đăng của shop
+  static getCategoriesWithProducts = async (req, res) => {
+    try {
+      const categoriesWithProducts = await CategoryModel.aggregate([
+        {
+          $lookup: {
+            from: "products", // tên collection của sản phẩm
+            localField: "_id", // liên kết từ trường _id của category
+            foreignField: "CATEGORY_ID", // liên kết đến trường CATEGORY_ID của sản phẩm
+            as: "products",
+          },
+        },
+        {
+          $match: {
+            "products.ACCOUNT__ID": req.body.id_account, // chỉ lấy sản phẩm của shop có ACCOUNT__ID trùng với accountId
+            "products.IS_DELETED": false, // chỉ lấy các sản phẩm chưa bị xóa
+          },
+        },
+        {
+          $project: {
+            CATEGORY_NAME: 1,
+            CREATED_AT: 1,
+            UPDATED_AT: 1,
+            TYPE_PRODUCT_ID: 1,
+            products: {
+              NAME_PRODUCT: 1,
+              SHORT_DESC: 1,
+              NUMBER_INVENTORY_PRODUCT: 1,
+            },
+          },
+        },
+      ]);
+
+      res.status(200).json({
+        message: "Lấy danh sách danh mục thành công",
+        success: true,
+        data: categoriesWithProducts,
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
 }
 
 module.exports = categoryController;

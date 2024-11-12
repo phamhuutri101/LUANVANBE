@@ -40,63 +40,68 @@ class PriceService {
       }
     }
 
-    // Kiểm tra xem giá với các thuộc tính tương ứng đã tồn tại chưa
-    const existingPrice = await PriceModel.findOne({
+    // Tìm tài liệu `PriceModel` chứa `ID_PRODUCT` và `ID_ACCOUNT` phù hợp
+    const priceDocument = await PriceModel.findOne({
       ID_PRODUCT: ID_PRODUCT,
       ID_ACCOUNT: ID_ACCOUNT,
-      "LIST_PRICE.LIST_MATCH_KEY": {
-        $all: listMatchKeys.map((item) => ({ $elemMatch: item })),
-      },
-      "LIST_PRICE.TO_DATE": null, // Chỉ kiểm tra các giá trị hiện tại (TO_DATE = null)
+      "LIST_PRICE.TO_DATE": null,
     });
 
-    if (existingPrice) {
-      // Nếu giá tồn tại, cập nhật `PRICE_NUMBER` và `FROM_DATE`
-      const updatedPrice = await PriceModel.updateOne(
-        {
-          ID_PRODUCT: ID_PRODUCT,
-          ID_ACCOUNT: ID_ACCOUNT,
-          "LIST_PRICE.LIST_MATCH_KEY": {
-            $all: listMatchKeys.map((item) => ({ $elemMatch: item })),
-          },
-          "LIST_PRICE.TO_DATE": null,
-        },
-        {
-          $set: {
-            "LIST_PRICE.$.PRICE_NUMBER": price_number,
-            "LIST_PRICE.$.FROM_DATE": new Date(),
-          },
-        }
-      );
-      return updatedPrice;
-    } else {
-      // Nếu giá chưa tồn tại, thêm mới vào LIST_PRICE
-      const addPrice = await PriceModel.updateOne(
-        {
-          ID_PRODUCT: ID_PRODUCT,
-          ID_ACCOUNT: ID_ACCOUNT,
-          LIST_PRICE_MAX_NUMBER: { $lt: 100 },
-        },
-        {
-          $push: {
-            LIST_PRICE: {
-              PRICE_NUMBER: price_number,
-              FROM_DATE: new Date(),
-              TO_DATE: null,
-              LIST_MATCH_KEY: listMatchKeys,
-            },
-          },
-          $inc: {
-            LIST_PRICE_MAX_NUMBER: 1,
-          },
-        },
-        {
-          upsert: true,
-        }
+    if (priceDocument) {
+      // Duyệt qua LIST_PRICE để tìm phần tử có LIST_MATCH_KEY khớp với `listMatchKeys`
+      const listPriceIndex = priceDocument.LIST_PRICE.findIndex(
+        (price) =>
+          price.LIST_MATCH_KEY.length === listMatchKeys.length &&
+          price.LIST_MATCH_KEY.every(
+            (keyValue, idx) =>
+              keyValue.KEY === listMatchKeys[idx].KEY &&
+              keyValue.VALUE === listMatchKeys[idx].VALUE
+          )
       );
 
-      return addPrice;
+      if (listPriceIndex > -1) {
+        // Nếu tìm thấy, cập nhật `PRICE_NUMBER` và `FROM_DATE` của phần tử tương ứng
+        priceDocument.LIST_PRICE[listPriceIndex].PRICE_NUMBER = price_number;
+        priceDocument.LIST_PRICE[listPriceIndex].FROM_DATE = new Date();
+
+        // Lưu lại tài liệu sau khi cập nhật
+        await priceDocument.save();
+        return { success: true, message: "Cập nhật giá thành công" };
+      }
     }
+
+    // Nếu giá chưa tồn tại, thêm mới vào LIST_PRICE
+    const addPrice = await PriceModel.updateOne(
+      {
+        ID_PRODUCT: ID_PRODUCT,
+        ID_ACCOUNT: ID_ACCOUNT,
+        LIST_PRICE_MAX_NUMBER: { $lt: 100 }, // Thay đổi giới hạn tùy nhu cầu
+      },
+      {
+        $push: {
+          LIST_PRICE: {
+            PRICE_NUMBER: price_number,
+            FROM_DATE: new Date(),
+            TO_DATE: null,
+            LIST_MATCH_KEY: listMatchKeys,
+          },
+        },
+        $inc: {
+          LIST_PRICE_MAX_NUMBER: 1,
+        },
+      },
+      {
+        upsert: true,
+      }
+    );
+
+    if (addPrice.matchedCount === 0) {
+      return {
+        error: "Không thể thêm giá mới, LIST_PRICE_MAX_NUMBER đã đạt giới hạn.",
+      };
+    }
+
+    return { success: true, message: "Thêm giá mới thành công" };
   };
 
   static getPrice = async (id_product) => {
@@ -105,6 +110,7 @@ class PriceService {
       {
         $match: {
           ID_PRODUCT: ID_PRODUCT,
+          IS_DELETE: false,
         },
       },
       {
@@ -172,6 +178,7 @@ class PriceService {
       {
         $match: {
           ID_PRODUCT: ID_PRODUCT,
+          IS_DELETE: false,
         },
       },
       {
@@ -206,6 +213,7 @@ class PriceService {
       {
         $match: {
           ID_PRODUCT: ID_PRODUCT,
+          IS_DELETE: false,
         },
       },
       {
@@ -238,6 +246,7 @@ class PriceService {
       {
         $match: {
           ID_PRODUCT: ID_PRODUCT,
+          IS_DELETE: false,
         },
       },
       {
@@ -260,13 +269,16 @@ class PriceService {
   };
   static getPriceByIdProduct = async (id_product) => {
     const ID_PRODUCT = new ObjectId(id_product);
-    const response = await PriceModel.findOne({ ID_PRODUCT: ID_PRODUCT });
+    const response = await PriceModel.findOne({
+      ID_PRODUCT: ID_PRODUCT,
+      IS_DELETE: false,
+    });
     return response;
   };
   static addPriceDefaultIsMinPrice = async (id_product) => {
     const ID_PRODUCT = new ObjectId(id_product);
     const product = await PriceModel.findOne(
-      { ID_PRODUCT: ID_PRODUCT },
+      { ID_PRODUCT: ID_PRODUCT, IS_DELETE: false },
       { LIST_PRICE: 1 } // Chỉ lấy mảng LIST_PRICE
     );
 
@@ -314,6 +326,7 @@ class PriceService {
         $match: {
           ID_PRODUCT: ID_PRODUCT,
           ID_ACCOUNT: ID_ACCOUNT,
+          IS_DELETE: false,
         },
       },
       {

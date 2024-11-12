@@ -7,8 +7,10 @@ const PromoCodeController = {
         req.body.code,
         req.body.discountAmount,
         req.body.discountPercentage,
+        req.body.maxPurchase,
         req.body.to_date,
         req.body.minPurchase,
+        req.body.quantity,
         req.user.id
       );
       if (!response) {

@@ -98,7 +98,7 @@ const paymentController = {
       //khi thanh toán xong, zalopay server sẽ POST đến url này để thông báo cho server của mình
       //Chú ý: cần dùng ngrok để public url thì Zalopay Server mới call đến được
       callback_url:
-        "https://97a9-2402-9d80-3f3-bf2a-2544-b948-505c-8aad.ngrok-free.app/v1/payment/callbackZalo",
+        "https://17e9-2402-800-6343-d18d-34d8-c7ed-ec24-3f07.ngrok-free.app/v1/payment/callbackZalo",
       description: `Lazada - Payment for the order #${transID}`,
       bank_code: "",
     };

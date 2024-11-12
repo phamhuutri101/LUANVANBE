@@ -659,6 +659,84 @@ class OrderService {
     );
     return deletedOrder;
   };
+  static calculateTotalOrderInDay = async () => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Start of the day
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1); // End of the current day
+
+      // Aggregate orders that have a payment time within the current day
+      const total = await OrderModel.aggregate([
+        {
+          $match: {
+            TIME_PAYMENT: { $gte: today, $lt: tomorrow },
+            IS_PAYMENT: true, // Ensures only completed payments are considered
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalOrderPrice: { $sum: "$ORDER_PRICE" }, // Sum of ORDER_PRICE only
+          },
+        },
+      ]);
+
+      return total[0]?.totalOrderPrice || 0; // Return the total order price or 0 if no results
+    } catch (error) {
+      console.error("Error calculating total order price in day:", error);
+      throw error;
+    }
+  };
+
+  static calculateTotalOrderInMonth = async () => {
+    try {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1); // Đặt ngày bắt đầu là ngày đầu tiên của tháng
+      startOfMonth.setHours(0, 0, 0, 0); // Đặt thời gian bắt đầu từ đầu ngày
+
+      const endOfMonth = new Date(startOfMonth);
+      endOfMonth.setMonth(startOfMonth.getMonth() + 1); // Đặt thời gian kết thúc là ngày đầu tiên của tháng tiếp theo
+
+      // Thực hiện phép tổng hợp để tính tổng số tiền giao dịch trong tháng
+      const total = await OrderModel.aggregate([
+        {
+          $match: {
+            TIME_PAYMENT: { $gte: startOfMonth, $lt: endOfMonth },
+            IS_PAYMENT: true, // Đảm bảo chỉ tính các giao dịch đã hoàn tất
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalOrderPrice: { $sum: "$ORDER_PRICE" }, // Tổng hợp trường ORDER_PRICE
+          },
+        },
+      ]);
+
+      return total[0]?.totalOrderPrice || 0; // Trả về tổng số tiền hoặc 0 nếu không có kết quả
+    } catch (error) {
+      console.error("Error calculating total order price in month:", error);
+      throw error;
+    }
+  };
+
+  static getOrderInDay = async () => {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0); // Thiết lập thời điểm bắt đầu của ngày
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999); // Thiết lập thời điểm kết thúc của ngày
+    const orders = await OrderModel.aggregate([
+      {
+        $match: {
+          TIME_PAYMENT: { $gte: startOfDay, $lte: endOfDay },
+          IS_DELETE: false,
+        },
+      },
+    ]);
+
+    return orders;
+  };
 }
 
 module.exports = OrderService;

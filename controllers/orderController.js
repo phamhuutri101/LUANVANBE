@@ -184,6 +184,55 @@ class OrderController {
       });
     }
   };
+  static calculateTotalPaymentInDay = async (req, res) => {
+    try {
+      const response = await OrderService.calculateTotalOrderInDay();
+      res.status(200).json({
+        success: true,
+        message: "Tính t��ng tiền thanh toán trong ngày",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  };
+
+  static calculateTotalPaymentInMonth = async (req, res) => {
+    try {
+      const response = await OrderService.calculateTotalOrderInMonth();
+      res.status(200).json({
+        success: true,
+        message: "Tính t��ng tiền thanh toán trong tháng",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  };
+  static getOrderInDay = async (req, res) => {
+    try {
+      const response = await OrderService.getOrderInDay();
+      res.status(200).json({
+        success: true,
+        message: "Lấy thông tin đơn hàng trong ngày",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  };
 }
 
 module.exports = OrderController;

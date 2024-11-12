@@ -14,6 +14,9 @@ var DISCOUNT = mongoose.Schema({
   DISCOUNT_PERCENTAGE: {
     type: Number,
   }, // Hoặc phần trăm giảm
+  MAX_DISCOUNT_AMOUNT: {
+    type: Number,
+  },
   TO_DATE: {
     type: Date,
     required: true,
@@ -29,5 +32,9 @@ var DISCOUNT = mongoose.Schema({
     type: Boolean,
     default: true,
   }, // Trạng thái mã
+  QUANTITY: {
+    type: Number,
+    default: 0,
+  }, // Số lượng mã giảm giá còn lại
 });
 module.exports = mongoose.model("discount", DISCOUNT);

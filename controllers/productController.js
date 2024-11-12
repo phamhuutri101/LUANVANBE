@@ -292,6 +292,22 @@ class ProductController {
       });
     }
   };
+  static getTotalProductShopper = async (req, res) => {
+    try {
+      const response = await ProductService.getTotalProductShop(req.user.id);
+      res.status(200).json({
+        message: "Lấy t��ng số sản phẩm trong shop thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "lấy tổng số sản phẩm trong shop thất bại",
+        success: false,
+        error: error.message,
+      });
+    }
+  };
 }
 
 module.exports = ProductController;

@@ -5,6 +5,11 @@ router.get(
   "/getProductShopByIdAccount/:id",
   productController.getProductShopByIdAccount
 );
+router.get(
+  "/getProductTotalShopper",
+  verify.verityToken,
+  productController.getTotalProductShopper
+);
 router.get("/getProductTotalShop/:id", productController.getTotalProductShop);
 router.get(
   "/getKV/:id",
