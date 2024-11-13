@@ -1,7 +1,9 @@
+const { verify } = require("jsonwebtoken");
 const ShopController = require("../controllers/shopController");
 const router = require("express").Router();
 const middleware = require("../middleware/verifyToken");
 router.post("/", middleware.verityToken, ShopController.checkTimeActiveShop);
+
 router.get("/getNameShop/:id", ShopController.getNameShopByIdAccount);
 router.get(
   "/checkActive",

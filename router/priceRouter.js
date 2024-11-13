@@ -1,12 +1,7 @@
 const router = require("express").Router();
 const priceController = require("../controllers/priceController");
 const verify = require("../middleware/verifyToken");
-router.post(
-  "/:id",
-  verify.verityToken,
-  verify.checkPermissionShopper,
-  priceController.addPrice
-);
+router.post("/:id", verify.verityToken, priceController.addPrice);
 router.post("/deletePrice/:id", priceController.deletePrice);
 
 router.post("/get_price/:id", priceController.getPrice);

@@ -8,9 +8,17 @@ router.post("/sendGoods/:id", orderController.updateStatusOrder4);
 router.post("/is_confirmed/:id", orderController.updateStatusOrder3);
 router.post("/receivedGoods/:id", orderController.updateStatusOrder6);
 router.post("/", verify.verityToken, orderController.addOrder);
-router.get("/getOrderInDay", orderController.getOrderInDay);
-router.get("/getPriceInDay", orderController.calculateTotalPaymentInDay);
-router.get("/getPriceInMonth", orderController.calculateTotalPaymentInMonth);
+router.get("/getOrderInDay", verify.verityToken, orderController.getOrderInDay);
+router.get(
+  "/getPriceInDay",
+  verify.verityToken,
+  orderController.calculateTotalPaymentInDay
+);
+router.get(
+  "/getPriceInMonth",
+  verify.verityToken,
+  orderController.calculateTotalPaymentInMonth
+);
 router.get("/lastStatusOrderCode/:id", orderController.getLastOrderStatus);
 router.get("/", verify.verityToken, orderController.getUserOrder);
 router.get(

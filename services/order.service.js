@@ -529,7 +529,6 @@ class OrderService {
       {
         $match: {
           ACCOUNT__ID: ID_ACCOUNT,
-          TIME_PAYMENT: { $ne: null },
 
           IS_DELETE: false,
         },
@@ -659,8 +658,9 @@ class OrderService {
     );
     return deletedOrder;
   };
-  static calculateTotalOrderInDay = async () => {
+  static calculateTotalOrderInDay = async (id_account) => {
     try {
+      const ID_ACCOUNT = new ObjectId(id_account);
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Start of the day
       const tomorrow = new Date(today);
@@ -670,6 +670,7 @@ class OrderService {
       const total = await OrderModel.aggregate([
         {
           $match: {
+            ACCOUNT__ID: ID_ACCOUNT,
             TIME_PAYMENT: { $gte: today, $lt: tomorrow },
             IS_PAYMENT: true, // Ensures only completed payments are considered
           },
@@ -689,8 +690,9 @@ class OrderService {
     }
   };
 
-  static calculateTotalOrderInMonth = async () => {
+  static calculateTotalOrderInMonth = async (id_account) => {
     try {
+      const ID_ACCOUNT = new ObjectId(id_account);
       const startOfMonth = new Date();
       startOfMonth.setDate(1); // Đặt ngày bắt đầu là ngày đầu tiên của tháng
       startOfMonth.setHours(0, 0, 0, 0); // Đặt thời gian bắt đầu từ đầu ngày
@@ -702,6 +704,7 @@ class OrderService {
       const total = await OrderModel.aggregate([
         {
           $match: {
+            ACCOUNT__ID: ID_ACCOUNT,
             TIME_PAYMENT: { $gte: startOfMonth, $lt: endOfMonth },
             IS_PAYMENT: true, // Đảm bảo chỉ tính các giao dịch đã hoàn tất
           },
@@ -721,14 +724,16 @@ class OrderService {
     }
   };
 
-  static getOrderInDay = async () => {
+  static getOrderInDay = async (id_account) => {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0); // Thiết lập thời điểm bắt đầu của ngày
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999); // Thiết lập thời điểm kết thúc của ngày
+    const ID_ACCOUNT = new ObjectId(id_account);
     const orders = await OrderModel.aggregate([
       {
         $match: {
+          ACCOUNT__ID: ID_ACCOUNT,
           TIME_PAYMENT: { $gte: startOfDay, $lte: endOfDay },
           IS_DELETE: false,
         },

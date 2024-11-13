@@ -186,7 +186,7 @@ class OrderController {
   };
   static calculateTotalPaymentInDay = async (req, res) => {
     try {
-      const response = await OrderService.calculateTotalOrderInDay();
+      const response = await OrderService.calculateTotalOrderInDay(req.user.id);
       res.status(200).json({
         success: true,
         message: "Tính t��ng tiền thanh toán trong ngày",
@@ -203,7 +203,9 @@ class OrderController {
 
   static calculateTotalPaymentInMonth = async (req, res) => {
     try {
-      const response = await OrderService.calculateTotalOrderInMonth();
+      const response = await OrderService.calculateTotalOrderInMonth(
+        req.user.id
+      );
       res.status(200).json({
         success: true,
         message: "Tính t��ng tiền thanh toán trong tháng",
@@ -219,7 +221,7 @@ class OrderController {
   };
   static getOrderInDay = async (req, res) => {
     try {
-      const response = await OrderService.getOrderInDay();
+      const response = await OrderService.getOrderInDay(req.user.id);
       res.status(200).json({
         success: true,
         message: "Lấy thông tin đơn hàng trong ngày",
