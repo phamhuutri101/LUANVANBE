@@ -55,6 +55,7 @@ class ProductController {
       });
     }
   };
+
   static searchProducts = async (req, res) => {
     try {
       const { query, page, limit } = req.query;

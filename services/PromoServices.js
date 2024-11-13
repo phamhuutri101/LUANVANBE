@@ -14,7 +14,7 @@ class PromoCodeService {
     quantity,
     id_account
   ) => {
-    const existingCode = await PromoModel.findOne({ CODE: code });
+    const existingCode = await PromoModel.findOne({ CODE: code, ACTIVE: true });
     if (existingCode) {
       return null;
     }

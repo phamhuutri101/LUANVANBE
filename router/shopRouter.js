@@ -3,7 +3,11 @@ const ShopController = require("../controllers/shopController");
 const router = require("express").Router();
 const middleware = require("../middleware/verifyToken");
 router.post("/", middleware.verityToken, ShopController.checkTimeActiveShop);
-
+router.get(
+  "/getNameShopper",
+  middleware.verityToken,
+  ShopController.getNameShopByIdAccountShopper
+);
 router.get("/getNameShop/:id", ShopController.getNameShopByIdAccount);
 router.get(
   "/checkActive",

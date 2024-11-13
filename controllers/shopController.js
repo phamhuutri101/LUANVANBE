@@ -112,5 +112,21 @@ const ShopController = {
       });
     }
   },
+  getNameShopByIdAccountShopper: async (req, res) => {
+    try {
+      const response = await ShopServices.getNameShopByIdAccount(req.user.id);
+      res.status(200).json({
+        success: true,
+        message: "Lấy tên shop của tài khoản thành công",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  },
 };
 module.exports = ShopController;
