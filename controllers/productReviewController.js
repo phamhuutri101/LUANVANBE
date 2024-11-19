@@ -10,6 +10,7 @@ const ProductReviews = {
       const result = await ProductReviewServices.AddReviews(
         req.params.id,
         req.user.id_user,
+        req.body.id_order,
         req.body.id_account_shop,
         req.body.number_start,
         req.body.desc_reviews,
@@ -121,6 +122,25 @@ const ProductReviews = {
     } catch (error) {
       res.status(500).json({
         message: "L��i khi lấy t��ng số đánh giá",
+        success: false,
+        error: error.message,
+      });
+    }
+  },
+  is_review: async (req, res) => {
+    try {
+      const response = await ProductReviewServices.is_review(
+        req.params.id,
+        req.user.id_user
+      );
+      res.status(200).json({
+        message: "Kiểm tra đánh giá thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "lỗi khi kiểm tra đánh giá",
         success: false,
         error: error.message,
       });

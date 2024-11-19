@@ -20,6 +20,97 @@ class ProductService {
     ]);
     return getProduct;
   };
+  static getAddressShopProduct = async () => {
+    try {
+      const products = await ProductModel.aggregate([
+        {
+          $match: {
+            IS_DELETED: false,
+          },
+        },
+        {
+          $lookup: {
+            from: "accounts",
+            localField: "ACCOUNT__ID",
+            foreignField: "_id",
+            as: "account",
+          },
+        },
+        {
+          $unwind: "$account",
+        },
+        {
+          $lookup: {
+            from: "users",
+            localField: "account.USER_ID",
+            foreignField: "_id",
+            as: "user",
+          },
+        },
+        {
+          $unwind: "$user",
+        },
+        {
+          $lookup: {
+            from: "user_addresses",
+            let: { userId: "$user._id" },
+            pipeline: [
+              { $match: { $expr: { $eq: ["$USER_ID", "$$userId"] } } },
+              {
+                $project: {
+                  LIST_ADDRESS: {
+                    $filter: {
+                      input: "$LIST_ADDRESS",
+                      as: "address",
+                      cond: { $eq: ["$$address.IS_DEFAULT", true] },
+                    },
+                  },
+                },
+              },
+            ],
+            as: "user_addresses",
+          },
+        },
+        {
+          $unwind: "$user_addresses",
+        },
+        {
+          $project: {
+            NAME_PRODUCT: 1,
+            SHORT_DESC: 1,
+            DESC_PRODUCT: 1,
+            "user_addresses.LIST_ADDRESS": 1, // Lấy danh sách địa chỉ từ `user_addresses`
+          },
+        },
+      ]);
+
+      // Tạo mảng lưu địa chỉ duy nhất theo PROVINCE
+      const uniqueAddresses = [];
+      const addressMap = new Map();
+
+      products.forEach((product) => {
+        if (product.user_addresses && product.user_addresses.LIST_ADDRESS) {
+          const defaultAddresses = product.user_addresses.LIST_ADDRESS.filter(
+            (address) => address.IS_DEFAULT === true
+          );
+
+          defaultAddresses.forEach((address) => {
+            const provinceKey = address.PROVINCE;
+            if (!addressMap.has(provinceKey)) {
+              addressMap.set(provinceKey, address);
+              uniqueAddresses.push(address);
+            }
+          });
+        }
+      });
+
+      return uniqueAddresses;
+    } catch (error) {
+      console.error("Error fetching product with address:", error);
+      throw error;
+    }
+  };
+
   static getProductShop = async (id_account, page = 1, limit = 10) => {
     page = Number(page);
     limit = Number(limit);
@@ -164,120 +255,115 @@ class ProductService {
 
     return product;
   }
-
-  static async createProductFashion(
-    name,
-    code,
-    short_desc,
-    desc_product,
-    category_id,
-    metadata,
-    file_attachments,
-    file_attachmentsdefault,
-    account_id
-  ) {
-    const ACCOUNT__ID = new ObjectId(account_id);
-    const CATEGORY_ID = new ObjectId(category_id);
-    const { colors, sizes } = metadata;
-    const listFileAttachments = file_attachments.map((file) => ({
-      FILE_URL: file.file_url,
-      FILE_TYPE: file.file_type,
-      FROM_DATE: new Date(),
-      TO_DATE: null,
-    }));
-    const listFileAttachmentsdefault = file_attachmentsdefault.map((file) => ({
-      FILE_URL: file.file_url,
-      FILE_TYPE: file.file_type,
-      FROM_DATE: new Date(),
-      TO_DATE: null,
-    }));
-    const product = await ProductModel.create({
-      NAME_PRODUCT: name,
-      CODE_PRODUCT: code,
-      SHORT_DESC: short_desc,
-      DESC_PRODUCT: desc_product,
-      // NUMBER_INVENTORY_PRODUCT: ,
-      CREATED_AT: new Date(),
-      UPDATED_AT: null,
-      CATEGORY_ID: CATEGORY_ID,
-      LIST_PRODUCT_METADATA: [
-        {
-          KEY: "Màu Sắc",
-          VALUE: colors,
-        },
-        {
-          KEY: "Kích Thước",
-          VALUE: sizes,
-        },
-      ],
-      LIST_FILE_ATTACHMENT: listFileAttachments,
-      ACCOUNT__ID: ACCOUNT__ID,
-      LIST_FILE_ATTACHMENT_DEFAULT: listFileAttachmentsdefault,
-      // QUANTITY_BY_KEY_VALUE: quantityByKeyValue,
-    });
-    return product;
-  }
-
   static async updateProduct(
+    id_product,
+    id_account,
     name,
-    code,
     short_desc,
     desc_product,
-    number_inventory_product,
     category_id,
-    metadata,
-    file_attachments,
-    quantity_by_key_value,
-    account_id
+    metadata
   ) {
-    const ID = new ObjectId(id_product);
-    const ACCOUNT__ID = new ObjectId(account_id);
+    const ID_PRODUCT = new ObjectId(id_product);
+    const ID_ACCOUNT = new ObjectId(id_account);
     const CATEGORY_ID = new ObjectId(category_id);
+    try {
+      // Tạo danh sách metadata từ input truyền vào (nếu có)
+      const listProductMetadata = metadata
+        ? metadata.map((item) => ({
+            KEY: item.KEY, // Lấy đúng KEY từ dữ liệu
+            VALUE: item.VALUE, // Lấy đúng VALUE từ dữ liệu
+          }))
+        : undefined;
 
-    const listFileAttachments = file_attachments.map((file) => ({
-      FILE_URL: file.file_url,
-      FILE_TYPE: file.file_type,
-      FROM_DATE: new Date(),
-      TO_DATE: null,
-    }));
-    const quantityByKeyValue = quantity_by_key_value.map((item) => ({
-      QUANTITY: item.quantity,
-      LIST_MATCH_KEY: item.list_match_key.map((match) => ({
-        KEY: match.key,
-        VALUE: match.value,
-      })),
-    }));
-    const updateProduct = await ProductModel.updateOne(
-      {
-        ACCOUNT__ID: ACCOUNT__ID,
-      },
-      {
-        $set: {
-          NAME_PRODUCT: name,
-          CODE_PRODUCT: code,
-          SHORT_DESC: short_desc,
-          DESC_PRODUCT: desc_product,
-          NUMBER_INVENTORY_PRODUCT: number_inventory_product,
-          CREATED_AT: new Date(),
-          UPDATED_AT: new Date(),
-          CATEGORY_ID: CATEGORY_ID,
-        },
-        $push: {
-          LIST_PRODUCT_METADATA: {
-            KEY: key,
-            VALUE: value,
-          },
-          LIST_FILE_ATTACHMENT: {
-            $each: listFileAttachments,
-          },
-          QUANTITY_BY_KEY_VALUE: {
-            $each: quantityByKeyValue,
-          },
-        },
+      // Tạo đối tượng cập nhật
+      const fieldsToUpdate = {
+        UPDATED_AT: new Date(), // Thời gian cập nhật
+      };
+      if (name) fieldsToUpdate.NAME_PRODUCT = name;
+      if (short_desc) fieldsToUpdate.SHORT_DESC = short_desc;
+      if (desc_product) fieldsToUpdate.DESC_PRODUCT = desc_product;
+      if (CATEGORY_ID) fieldsToUpdate.CATEGORY_ID = CATEGORY_ID;
+      if (listProductMetadata)
+        fieldsToUpdate.LIST_PRODUCT_METADATA = listProductMetadata;
+      // Thực hiện cập nhật
+      const updatedProduct = await ProductModel.findOneAndUpdate(
+        { _id: ID_PRODUCT, IS_DELETED: false, ACCOUNT__ID: ID_ACCOUNT }, // Điều kiện tìm kiếm
+        { $set: fieldsToUpdate }, // Cập nhật các trường
+        { new: true } // Trả về sản phẩm sau khi cập nhật
+      );
+
+      if (!updatedProduct) {
+        throw new Error("Không tìm thấy sản phẩm hoặc sản phẩm đã bị xóa.");
       }
-    );
-    return updateProduct;
+
+      return updatedProduct;
+    } catch (error) {
+      console.error("Lỗi khi cập nhật sản phẩm:", error);
+      throw new Error(error.message || "Không thể cập nhật sản phẩm.");
+    }
   }
+
+  // static async updateProduct(
+  //   name,
+  //   code,
+  //   short_desc,
+  //   desc_product,
+  //   number_inventory_product,
+  //   category_id,
+  //   metadata,
+  //   file_attachments,
+  //   quantity_by_key_value,
+  //   account_id
+  // ) {
+  //   const ID = new ObjectId(id_product);
+  //   const ACCOUNT__ID = new ObjectId(account_id);
+  //   const CATEGORY_ID = new ObjectId(category_id);
+
+  //   const listFileAttachments = file_attachments.map((file) => ({
+  //     FILE_URL: file.file_url,
+  //     FILE_TYPE: file.file_type,
+  //     FROM_DATE: new Date(),
+  //     TO_DATE: null,
+  //   }));
+  //   const quantityByKeyValue = quantity_by_key_value.map((item) => ({
+  //     QUANTITY: item.quantity,
+  //     LIST_MATCH_KEY: item.list_match_key.map((match) => ({
+  //       KEY: match.key,
+  //       VALUE: match.value,
+  //     })),
+  //   }));
+  //   const updateProduct = await ProductModel.updateOne(
+  //     {
+  //       ACCOUNT__ID: ACCOUNT__ID,
+  //     },
+  //     {
+  //       $set: {
+  //         NAME_PRODUCT: name,
+  //         CODE_PRODUCT: code,
+  //         SHORT_DESC: short_desc,
+  //         DESC_PRODUCT: desc_product,
+  //         NUMBER_INVENTORY_PRODUCT: number_inventory_product,
+  //         CREATED_AT: new Date(),
+  //         UPDATED_AT: new Date(),
+  //         CATEGORY_ID: CATEGORY_ID,
+  //       },
+  //       $push: {
+  //         LIST_PRODUCT_METADATA: {
+  //           KEY: key,
+  //           VALUE: value,
+  //         },
+  //         LIST_FILE_ATTACHMENT: {
+  //           $each: listFileAttachments,
+  //         },
+  //         QUANTITY_BY_KEY_VALUE: {
+  //           $each: quantityByKeyValue,
+  //         },
+  //       },
+  //     }
+  //   );
+  //   return updateProduct;
+  // }
 
   static deleteProduct = async (id_product) => {
     const ID_PRODUCT = new ObjectId(id_product);
@@ -323,6 +409,184 @@ class ProductService {
     ]);
 
     return result.length > 0 ? result[0] : null; // Trả về kết quả
+  };
+  static deleteFileAttachment = async (
+    id_product,
+    id_account,
+    id_attachment
+  ) => {
+    try {
+      const ID_PRODUCT = new ObjectId(id_product);
+      const ID_ACCOUNT = new ObjectId(id_account);
+      const ID_ATTACHMENT = new ObjectId(id_attachment);
+
+      // Thực hiện cập nhật để xóa phần tử trong mảng LIST_FILE_ATTACHMENT
+      const updatedProduct = await ProductModel.updateOne(
+        {
+          _id: ID_PRODUCT,
+          ACCOUNT__ID: ID_ACCOUNT,
+        },
+        {
+          $pull: {
+            LIST_FILE_ATTACHMENT: { _id: ID_ATTACHMENT },
+          },
+        }
+      );
+
+      if (updatedProduct.modifiedCount === 0) {
+        return {
+          success: false,
+          message: "Không tìm thấy sản phẩm hoặc không có tệp cần xóa.",
+        };
+      }
+
+      return {
+        success: true,
+        message: "Đã xóa tệp thành công.",
+        updatedProduct,
+      };
+    } catch (error) {
+      console.error("Error deleting file attachment:", error);
+      return { success: false, message: "Đã xảy ra lỗi khi xóa tệp.", error };
+    }
+  };
+  static deleteFileAttachmentDefault = async (
+    id_product,
+    id_account,
+    id_attachment
+  ) => {
+    try {
+      const ID_PRODUCT = new ObjectId(id_product);
+      const ID_ACCOUNT = new ObjectId(id_account);
+      const ID_ATTACHMENT = new ObjectId(id_attachment);
+
+      // Thực hiện cập nhật để xóa phần tử trong mảng LIST_FILE_ATTACHMENT
+      const updatedProduct = await ProductModel.updateOne(
+        {
+          _id: ID_PRODUCT,
+          ACCOUNT__ID: ID_ACCOUNT,
+        },
+        {
+          $pull: {
+            LIST_FILE_ATTACHMENT_DEFAULT: { _id: ID_ATTACHMENT },
+          },
+        }
+      );
+
+      if (updatedProduct.modifiedCount === 0) {
+        return {
+          success: false,
+          message: "Không tìm thấy sản phẩm hoặc không có tệp cần xóa.",
+        };
+      }
+
+      return {
+        success: true,
+        message: "Đã xóa tệp thành công.",
+        updatedProduct,
+      };
+    } catch (error) {
+      console.error("Error deleting file attachment:", error);
+      return { success: false, message: "Đã xảy ra lỗi khi xóa tệp.", error };
+    }
+  };
+  static addFileAttachments = async (
+    id_product,
+    id_account,
+    file_url,
+    file_type
+  ) => {
+    try {
+      const ID_PRODUCT = new ObjectId(id_product);
+      const ID_ACCOUNT = new ObjectId(id_account);
+
+      // Thực hiện cập nhật để thêm mảng hình ảnh vào LIST_FILE_ATTACHMENT
+      const updatedProduct = await ProductModel.updateOne(
+        {
+          _id: ID_PRODUCT,
+          ACCOUNT__ID: ID_ACCOUNT,
+        },
+        {
+          $push: {
+            LIST_FILE_ATTACHMENT: {
+              FILE_URL: file_url,
+              FILE_TYPE: file_type,
+              FROM_DATE: new Date(),
+              TO_DATE: null,
+            },
+          },
+        }
+      );
+
+      if (updatedProduct.modifiedCount === 0) {
+        return {
+          success: false,
+          message: "Không tìm thấy sản phẩm hoặc không thể thêm hình ảnh.",
+        };
+      }
+
+      return {
+        success: true,
+        message: "Đã thêm hình ảnh thành công.",
+        updatedProduct,
+      };
+    } catch (error) {
+      console.error("Error adding file attachments:", error);
+      return {
+        success: false,
+        message: "Đã xảy ra lỗi khi thêm hình ảnh.",
+        error,
+      };
+    }
+  };
+  static addFileAttachmentsDefault = async (
+    id_product,
+    id_account,
+    file_url,
+    file_type
+  ) => {
+    try {
+      const ID_PRODUCT = new ObjectId(id_product);
+      const ID_ACCOUNT = new ObjectId(id_account);
+
+      // Thực hiện cập nhật để thêm mảng hình ảnh vào LIST_FILE_ATTACHMENT
+      const updatedProduct = await ProductModel.updateOne(
+        {
+          _id: ID_PRODUCT,
+          ACCOUNT__ID: ID_ACCOUNT,
+        },
+        {
+          $push: {
+            LIST_FILE_ATTACHMENT_DEFAULT: {
+              FILE_URL: file_url,
+              FILE_TYPE: file_type,
+              FROM_DATE: new Date(),
+              TO_DATE: null,
+            },
+          },
+        }
+      );
+
+      if (updatedProduct.modifiedCount === 0) {
+        return {
+          success: false,
+          message: "Không tìm thấy sản phẩm hoặc không thể thêm hình ảnh.",
+        };
+      }
+
+      return {
+        success: true,
+        message: "Đã thêm hình ảnh thành công.",
+        updatedProduct,
+      };
+    } catch (error) {
+      console.error("Error adding file attachments:", error);
+      return {
+        success: false,
+        message: "Đã xảy ra lỗi khi thêm hình ảnh.",
+        error,
+      };
+    }
   };
 }
 module.exports = ProductService;

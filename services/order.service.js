@@ -6,7 +6,7 @@ const AddressService = require("../services/address.services");
 const CartService = require("../services/cart.service");
 const UserService = require("../services/user.service");
 const Inventory_EntriesService = require("../services/inventory_entries.service");
-const payment_method = require("../models/payment_method");
+const InventoryEntriesModel = require("../models/inventory_entries");
 const code = randomCode();
 class OrderService {
   static addOrder = async (
@@ -396,6 +396,69 @@ class OrderService {
       return updateStatus;
     }
   };
+  static statusOrder7 = async (id_account, id_order, content_cancel) => {
+    const ID_ACCOUNT = new ObjectId(id_account);
+    const ID_ORDER = new ObjectId(id_order);
+
+    const lastOrder = await OrderModel.findOne({
+      ACCOUNT__ID: ID_ACCOUNT,
+      _id: ID_ORDER,
+    }).sort({ _id: -1 });
+
+    if (lastOrder) {
+      await OrderModel.updateOne(
+        {
+          _id: lastOrder._id,
+        },
+        {
+          $set: {
+            IS_PAYMENT: false,
+            TIME_CANCEL: new Date(),
+            CANCEL_REASON: content_cancel,
+          },
+        }
+      );
+      await OrderService.updateNumberProductReturn(
+        lastOrder.LIST_PRODUCT[0].ID_PRODUCT,
+        lastOrder.LIST_PRODUCT[0].ID_KEY_VALUE,
+        lastOrder.LIST_PRODUCT[0].QLT
+      );
+      await Inventory_EntriesService.updateNumberInventoryProduct(
+        lastOrder.LIST_PRODUCT[0].ID_PRODUCT
+      );
+      // Cập nhật TO_DATE trong LIST_STATUS cho mục cuối cùng
+      await OrderModel.updateOne(
+        {
+          _id: lastOrder._id,
+          "LIST_STATUS.TO_DATE": null,
+        },
+        {
+          $set: {
+            "LIST_STATUS.$.TO_DATE": new Date(),
+          },
+        }
+      );
+
+      // Thêm trạng thái mới vào LIST_STATUS
+      const updateStatus = await OrderModel.updateOne(
+        {
+          _id: lastOrder._id,
+        },
+        {
+          $push: {
+            LIST_STATUS: {
+              STATUS_NAME: "đã hủy",
+              STATUS_CODE: 7,
+              FROM_DATE: new Date(),
+              TO_DATE: null,
+            },
+          },
+        }
+      );
+
+      return updateStatus;
+    }
+  };
   static getLastOrderStatus = async (idOrder) => {
     try {
       // Tìm order theo idOrder
@@ -595,6 +658,27 @@ class OrderService {
     );
     return update;
   };
+  static updateNumberProductReturn = async (
+    id_product,
+    id_key_value,
+    number_cart
+  ) => {
+    const ID_PRODUCT = new ObjectId(id_product);
+    const ID_KEY_VALUE = new ObjectId(id_key_value);
+    const update = ProductModel.updateOne(
+      {
+        _id: ID_PRODUCT,
+
+        "QUANTITY_BY_KEY_VALUE._id": ID_KEY_VALUE,
+      },
+      {
+        $inc: {
+          "QUANTITY_BY_KEY_VALUE.$.QUANTITY": +number_cart,
+        },
+      }
+    );
+    return update;
+  };
   static getSuccessPayment = async (id_account) => {
     const ID_ACCOUNT = new ObjectId(id_account);
     const order = await OrderModel.aggregate([
@@ -741,6 +825,151 @@ class OrderService {
     ]);
 
     return orders;
+  };
+  static getOrderProfitInDay = async (id_account) => {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0); // Thiết lập thời điểm bắt đầu của ngày
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999); // Thiết lập thời điểm kết thúc của ngày
+    const ID_ACCOUNT = new ObjectId(id_account);
+
+    // Lấy đơn hàng trong ngày
+    const orders = await OrderModel.aggregate([
+      {
+        $match: {
+          ACCOUNT__ID: ID_ACCOUNT,
+          TIME_PAYMENT: { $gte: startOfDay, $lte: endOfDay },
+          IS_DELETE: false,
+        },
+      },
+    ]);
+
+    if (!orders.length) return { totalProfit: 0, orders: [] };
+
+    const productIds = [];
+    orders.forEach((order) => {
+      order.LIST_PRODUCT.forEach((product) => {
+        productIds.push(product.ID_PRODUCT);
+      });
+    });
+
+    // Lấy giá nhập kho cuối cùng của từng sản phẩm
+    const inventoryEntries = await InventoryEntriesModel.aggregate([
+      {
+        $unwind: "$LIST_PRODUCT_CREATED",
+      },
+      {
+        $match: {
+          "LIST_PRODUCT_CREATED.ID_PRODUCT": { $in: productIds },
+          IS_DELETE: false,
+        },
+      },
+      {
+        $sort: {
+          "LIST_PRODUCT_CREATED.ID_PRODUCT": 1,
+          CRATED_DATE: -1,
+        },
+      },
+      {
+        $group: {
+          _id: "$LIST_PRODUCT_CREATED.ID_PRODUCT",
+          lastUnitPrice: { $first: "$LIST_PRODUCT_CREATED.UNIT_PRICE" },
+        },
+      },
+    ]);
+
+    const lastUnitPrices = {};
+    inventoryEntries.forEach((entry) => {
+      lastUnitPrices[entry._id.toString()] = entry.lastUnitPrice;
+    });
+
+    // Tính lợi nhuận từng đơn hàng
+    let totalProfit = 0;
+    const orderProfits = orders.map((order) => {
+      let orderProfit = 0;
+
+      order.LIST_PRODUCT.forEach((product) => {
+        const productId = product.ID_PRODUCT.toString();
+        const lastUnitPrice = lastUnitPrices[productId] || 0;
+
+        // Lợi nhuận sản phẩm = (giá bán - giá nhập kho cuối cùng) * số lượng - giảm giá
+        const productProfit =
+          (product.UNITPRICES - lastUnitPrice) * product.NUMBER_PRODUCT;
+        orderProfit += productProfit;
+      });
+
+      // Trừ giảm giá trên đơn hàng
+      orderProfit -= order.PRICE_REDUCED;
+
+      // Tổng cộng lợi nhuận
+      totalProfit += orderProfit;
+
+      return {
+        orderId: order._id,
+        profit: orderProfit,
+      };
+    });
+
+    return { totalProfit, orders: orderProfits };
+  };
+  static calculateOrderProfit = async (orderId) => {
+    try {
+      // Lấy thông tin đơn hàng theo ORDER_ID
+      const order = await OrderModel.findById(orderId).lean();
+
+      if (!order) {
+        throw new Error("Đơn hàng không tồn tại");
+      }
+
+      let totalRevenue = 0; // Tổng giá bán
+      let totalCost = 0; // Tổng giá nhập kho cuối
+
+      // Duyệt qua từng sản phẩm trong đơn hàng
+      for (const product of order.LIST_PRODUCT) {
+        // Tính tổng giá bán của sản phẩm
+        const productRevenue = product.UNITPRICES * product.NUMBER_PRODUCT;
+        totalRevenue += productRevenue;
+
+        // Lấy giá nhập cuối cùng cho sản phẩm và biến thể
+        const lastInventoryEntry = await InventoryEntriesModel.aggregate([
+          { $unwind: "$LIST_PRODUCT_CREATED" },
+          {
+            $match: {
+              "LIST_PRODUCT_CREATED.ID_PRODUCT": product.ID_PRODUCT,
+              "LIST_PRODUCT_CREATED.DETAILS": {
+                $all: product.LIST_MATCH_KEY.map((keyValue) => ({
+                  $elemMatch: { KEY: keyValue.KEY, VALUE: keyValue.VALUE },
+                })),
+              },
+              IS_DELETE: false,
+            },
+          },
+          { $sort: { CRATED_DATE: -1 } }, // Lấy phiếu nhập mới nhất
+          { $limit: 1 },
+        ]);
+
+        // Lấy giá nhập cuối (nếu không tìm thấy, mặc định là 0)
+        const lastUnitPrice =
+          lastInventoryEntry[0]?.LIST_PRODUCT_CREATED.UNIT_PRICE || 0;
+
+        // Tính tổng giá nhập kho cuối
+        totalCost += lastUnitPrice * product.NUMBER_PRODUCT;
+      }
+
+      // Tính lợi nhuận
+      const profit = totalRevenue - totalCost - (order.PRICE_REDUCED || 0);
+
+      // Kết quả
+      return {
+        orderId: order._id,
+        totalRevenue,
+        totalCost,
+        discount: order.PRICE_REDUCED || 0,
+        profit,
+      };
+    } catch (error) {
+      throw new Error(`Lỗi khi tính lợi nhuận: ${error.message}`);
+    }
   };
 }
 

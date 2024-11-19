@@ -8,6 +8,9 @@ var PRODUCT_REVIEWS = new Schema({
   USER_ID: {
     type: Schema.Types.ObjectId,
   },
+  ID_ORDER: {
+    type: Schema.Types.ObjectId,
+  },
   ID_ACCOUNT_SHOP: {
     type: Schema.Types.ObjectId,
   },

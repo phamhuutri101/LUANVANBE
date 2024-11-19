@@ -19,6 +19,20 @@ class ProductController {
       });
     }
   };
+  static getAddressShop = async (req, res, next) => {
+    try {
+      const products = await ProductService.getAddressShopProduct();
+      res.status(200).json({
+        message: "Lấy tất cả sản phẩm thành công",
+        success: true,
+        data: products,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: error.message,
+      });
+    }
+  };
   static getProductShop = async (req, res) => {
     try {
       const response = await ProductService.getProductShop(
@@ -140,8 +154,6 @@ class ProductController {
         metadata, // Chúng ta sử dụng metadata dưới dạng mảng đối tượng { key, value }
         file_attachments,
         file_attachmentsdefault,
-        number_inventory_product,
-        quantity_by_key_value,
       } = req.body;
 
       // Gọi service để tạo sản phẩm mới
@@ -167,6 +179,27 @@ class ProductController {
       });
     } catch (error) {
       // Trả về lỗi nếu có vấn đề xảy ra
+      res.status(400).json({ error: error.message });
+    }
+  };
+  static updateProduct = async (req, res) => {
+    try {
+      const savedProduct = await ProductService.updateProduct(
+        req.params.id, // Thêm id vào đây
+        req.user.id, // Thêm account_id nếu cần
+        req.body.name,
+        req.body.short_desc,
+        req.body.desc_product,
+        req.body.category_id,
+        req.body.metadata
+      );
+
+      res.status(200).json({
+        message: "Cập nhật sản phẩm thành công",
+        success: true,
+        product: savedProduct,
+      });
+    } catch (error) {
       res.status(400).json({ error: error.message });
     }
   };
@@ -208,37 +241,6 @@ class ProductController {
         message: "Tạo sản phẩm thành công",
         success: true,
         data: savedProduct,
-      });
-    } catch (error) {
-      res.status(400).json({ error: error.message });
-    }
-  };
-
-  static updateProduct = async (req, res) => {
-    try {
-      const updatedProduct = await ProductService.updateProduct(
-        req.params.id,
-        req.body.name,
-        req.body.code,
-        req.body.short_desc,
-        req.body.desc_product,
-        req.body.number_inventory_product,
-        req.body.category_id,
-        req.body.key,
-        req.body.value,
-        req.body.file_url,
-        req.body.file_type,
-        req.user.id
-      );
-      if (!updatedProduct) {
-        return res
-          .status(404)
-          .json({ message: "Cập nhật sản phẩm không thành công" });
-      }
-      return res.status(200).json({
-        message: "Cập nhật sản phẩm thành công!",
-        success: true,
-        data: updatedProduct,
       });
     } catch (error) {
       res.status(400).json({ error: error.message });
@@ -304,6 +306,88 @@ class ProductController {
     } catch (error) {
       res.status(500).json({
         message: "lấy tổng số sản phẩm trong shop thất bại",
+        success: false,
+        error: error.message,
+      });
+    }
+  };
+  static deleteFileAttachment = async (req, res) => {
+    try {
+      const response = await ProductService.deleteFileAttachment(
+        req.params.id,
+        req.user.id,
+        req.body.id_array
+      );
+      res.status(200).json({
+        message: "Xóa file đính kèm thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Xóa file đính kèm thất bại",
+        success: false,
+        error: error.message,
+      });
+    }
+  };
+  static deleteFileAttachmentDefault = async (req, res) => {
+    try {
+      const response = await ProductService.deleteFileAttachmentDefault(
+        req.params.id,
+        req.user.id,
+        req.body.id_array
+      );
+      res.status(200).json({
+        message: "Xóa file đính kèm mặc đình thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Xóa file đính kèm mặc đ��nh thất bại",
+        success: false,
+        error: error.message,
+      });
+    }
+  };
+  static uploadFileAttachment = async (req, res) => {
+    try {
+      const response = await ProductService.addFileAttachments(
+        req.params.id,
+        req.user.id,
+        req.body.file_url,
+        req.body.file_type
+      );
+      res.status(200).json({
+        message: "Tải file đính kèm thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Tải file đính kèm thất bại",
+        success: false,
+        error: error.message,
+      });
+    }
+  };
+  static uploadFileAttachmentDefault = async (req, res) => {
+    try {
+      const response = await ProductService.addFileAttachmentsDefault(
+        req.params.id,
+        req.user.id,
+        req.body.file_url,
+        req.body.file_type
+      );
+      res.status(200).json({
+        message: "Tải file đính kèm thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Tải file đính kèm thất bại",
         success: false,
         error: error.message,
       });

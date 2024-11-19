@@ -101,6 +101,9 @@ var ORDER = new Schema({
   CANCEL_REASON: {
     type: String,
   },
+  TIME_CANCEL: {
+    type: Date,
+  },
   ACCOUNT__ID: {
     type: Schema.Types.ObjectId,
     required: true,

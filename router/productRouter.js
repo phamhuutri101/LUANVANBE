@@ -6,7 +6,7 @@ router.get(
   verify.verityToken,
   productController.getTotalProductShopper
 );
-
+router.get("/getAddressShopProduct", productController.getAddressShop);
 router.get(
   "/getProductShopByIdAccount/:id",
   productController.getProductShopByIdAccount
@@ -27,6 +27,26 @@ router.get(
 
   productController.getProductShop
 );
+router.post(
+  "/uploadImgProduct/:id",
+  verify.verityToken,
+  productController.uploadFileAttachment
+);
+router.post(
+  "/uploadImgProductDefault/:id",
+  verify.verityToken,
+  productController.uploadFileAttachmentDefault
+);
+router.put(
+  "/deleteFileImgProductDefault/:id",
+  verify.verityToken,
+  productController.deleteFileAttachmentDefault
+);
+router.put(
+  "/deleteFileImgProduct/:id",
+  verify.verityToken,
+  productController.deleteFileAttachment
+);
 router.get("/:id", productController.getProductById);
 router.get("/category/:id", productController.getProductsByCategory);
 
@@ -37,9 +57,8 @@ router.post(
   productController.createProduct
 );
 router.put(
-  "/:id",
+  "/updateProduct/:id",
   verify.verityToken,
-
   productController.updateProduct
 );
 router.delete("/:id", productController.deleteProduct);

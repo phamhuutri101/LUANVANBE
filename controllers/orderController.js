@@ -152,6 +152,26 @@ class OrderController {
       });
     }
   };
+  static updateStatusOrder7 = async (req, res) => {
+    try {
+      const response = await OrderService.statusOrder7(
+        req.user.id,
+        req.body.id_order,
+        req.body.content_cancel
+      );
+      res.status(200).json({
+        success: true,
+        message: "Cập nhật trạng thái đã hủy hàng",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  };
   static getLastOrderStatus = async (req, res) => {
     try {
       const response = await OrderService.getLastOrderStatus(req.params.id);
@@ -225,6 +245,40 @@ class OrderController {
       res.status(200).json({
         success: true,
         message: "Lấy thông tin đơn hàng trong ngày",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  };
+  static getOrderProfitInDay = async (req, res) => {
+    try {
+      const response = await OrderService.getOrderProfitInDay(req.user.id);
+      res.status(200).json({
+        success: true,
+        message: "Lấy thông tin doanh thu trong ngày",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  };
+  static calculateOrderProfit = async (req, res) => {
+    try {
+      const response = await OrderService.calculateOrderProfit(
+        req.params.id_order
+      );
+      res.status(200).json({
+        success: true,
+        message: "Tính doanh thu của đơn hàng",
         data: response,
       });
     } catch (error) {

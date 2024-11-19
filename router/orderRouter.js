@@ -3,6 +3,11 @@ const router = express.Router();
 const orderController = require("../controllers/orderController");
 const verify = require("../middleware/verifyToken");
 
+router.post(
+  "/cancelOrder",
+  verify.verityToken,
+  orderController.updateStatusOrder7
+);
 router.post("/deleteOrder/:id", orderController.deleteOrder);
 router.post("/sendGoods/:id", orderController.updateStatusOrder4);
 router.post("/is_confirmed/:id", orderController.updateStatusOrder3);
@@ -13,6 +18,15 @@ router.get(
   "/getPriceInDay",
   verify.verityToken,
   orderController.calculateTotalPaymentInDay
+);
+router.get(
+  "/getOrderProfitInDay",
+  verify.verityToken,
+  orderController.getOrderProfitInDay
+);
+router.get(
+  "/calculateOrderProfit/:id_order",
+  orderController.calculateOrderProfit
 );
 router.get(
   "/getPriceInMonth",

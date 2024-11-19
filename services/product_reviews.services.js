@@ -5,6 +5,7 @@ class ProductReviews {
   static AddReviews = async (
     id_product,
     id_account,
+    id_order,
     id_account_shop,
     number_start,
     desc_reviews,
@@ -14,7 +15,7 @@ class ProductReviews {
     const ID_PRODUCT = new ObjectId(id_product);
     const ID_ACCOUNT = new ObjectId(id_account);
     const ID_ACCOUNT_SHOP = new ObjectId(id_account_shop);
-
+    const ID_ORDER = new ObjectId(id_order);
     // Chuyển đổi img_url từ chuỗi URL sang object chứa FILE_URL
     const listFile = img_url.map((fileUrl) => ({
       FILE_URL: fileUrl, // Chuyển mỗi URL thành object với FILE_URL
@@ -23,6 +24,7 @@ class ProductReviews {
     // Tạo một object chứa đánh giá mới
     const newReview = {
       ID_PRODUCT: ID_PRODUCT,
+      ID_ORDER: ID_ORDER,
       ID_ACCOUNT_SHOP: ID_ACCOUNT_SHOP,
       USER_ID: ID_ACCOUNT,
       NUMBER_OF_START: number_start,
@@ -188,6 +190,17 @@ class ProductReviews {
       return response.length > 0 ? response[0].totalReviews : 0;
     } catch (error) {
       console.error(error);
+    }
+  };
+  static is_review = async (id_order, id_account) => {
+    const response = await ProductReviewsModel.find({
+      ID_ORDER: id_order,
+      IS_DELETE: false,
+
+      USER_ID: id_account,
+    });
+    if (response.length > 0) {
+      return true;
     }
   };
 }

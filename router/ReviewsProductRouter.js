@@ -2,6 +2,11 @@ const router = require("express").Router();
 const verify = require("../middleware/verifyToken");
 const ProductReviewsController = require("../controllers/productReviewController");
 router.get(
+  "/isReview/:id",
+  verify.verityToken,
+  ProductReviewsController.is_review
+);
+router.get(
   "/getAllShop",
   verify.verityToken,
   ProductReviewsController.getAllReviewsShop
