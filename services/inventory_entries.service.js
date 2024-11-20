@@ -194,12 +194,20 @@ class Inventory_EntriesService {
     }
   };
 
-  static getInventory_Entries = async (id_account) => {
+  static getInventory_Entries = async (id_account, page = 1, limit = 10) => {
     const ID_ACCOUNT = new ObjectId(id_account);
-    const getInventory_Entries = await inventory_entriesModel.find({
-      ACCOUNT__ID: ID_ACCOUNT,
-      IS_DELETE: false,
-    });
+    page = Number(page);
+    limit = Number(limit);
+    const getInventory_Entries = await inventory_entriesModel.aggregate([
+      {
+        $match: {
+          ACCOUNT__ID: ID_ACCOUNT,
+          IS_DELETE: false,
+        },
+      },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+    ]);
     return getInventory_Entries;
   };
   static getInventoryByIdProduct = async (id_product, id_account) => {

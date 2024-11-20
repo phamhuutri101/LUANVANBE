@@ -60,7 +60,9 @@ const InventoryController = {
   getInventory_Entries: async (req, res) => {
     try {
       const response = await Inventory_EntriesService.getInventory_Entries(
-        req.user.id
+        req.user.id,
+        req.query.page,
+        req.query.limit
       );
       res.status(200).json({
         message: "Lấy phiếu nhập kho thành công",

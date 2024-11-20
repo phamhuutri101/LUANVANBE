@@ -827,90 +827,128 @@ class OrderService {
     return orders;
   };
   static getOrderProfitInDay = async (id_account) => {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0); // Thiết lập thời điểm bắt đầu của ngày
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999); // Thiết lập thời điểm kết thúc của ngày
-    const ID_ACCOUNT = new ObjectId(id_account);
+    try {
+      // Lấy thời gian bắt đầu và kết thúc của ngày
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0); // Bắt đầu ngày
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999); // Kết thúc ngày
+      const ID_ACCOUNT = new ObjectId(id_account);
 
-    // Lấy đơn hàng trong ngày
-    const orders = await OrderModel.aggregate([
-      {
-        $match: {
-          ACCOUNT__ID: ID_ACCOUNT,
-          TIME_PAYMENT: { $gte: startOfDay, $lte: endOfDay },
-          IS_DELETE: false,
-        },
-      },
-    ]);
+      // Lấy danh sách đơn hàng trong ngày
+      const orders = await OrderModel.find({
+        ACCOUNT__ID: ID_ACCOUNT,
+        TIME_PAYMENT: { $gte: startOfDay, $lte: endOfDay },
+        IS_PAYMENT: true,
+        IS_DELETE: false,
+      }).lean();
 
-    if (!orders.length) return { totalProfit: 0, orders: [] };
+      if (!orders.length)
+        return { totalRevenue: 0, totalCost: 0, totalProfit: 0, orders: [] };
 
-    const productIds = [];
-    orders.forEach((order) => {
-      order.LIST_PRODUCT.forEach((product) => {
-        productIds.push(product.ID_PRODUCT);
-      });
-    });
+      const productProfits = [];
+      let totalRevenue = 0;
+      let totalCost = 0;
+      let totalProfit = 0;
 
-    // Lấy giá nhập kho cuối cùng của từng sản phẩm
-    const inventoryEntries = await InventoryEntriesModel.aggregate([
-      {
-        $unwind: "$LIST_PRODUCT_CREATED",
-      },
-      {
-        $match: {
-          "LIST_PRODUCT_CREATED.ID_PRODUCT": { $in: productIds },
-          IS_DELETE: false,
-        },
-      },
-      {
-        $sort: {
-          "LIST_PRODUCT_CREATED.ID_PRODUCT": 1,
-          CRATED_DATE: -1,
-        },
-      },
-      {
-        $group: {
-          _id: "$LIST_PRODUCT_CREATED.ID_PRODUCT",
-          lastUnitPrice: { $first: "$LIST_PRODUCT_CREATED.UNIT_PRICE" },
-        },
-      },
-    ]);
+      // Duyệt qua từng đơn hàng
+      for (const order of orders) {
+        let orderRevenue = 0;
+        let orderCost = 0;
+        let orderProfit = 0;
 
-    const lastUnitPrices = {};
-    inventoryEntries.forEach((entry) => {
-      lastUnitPrices[entry._id.toString()] = entry.lastUnitPrice;
-    });
+        // Duyệt qua từng sản phẩm trong đơn hàng
+        for (const product of order.LIST_PRODUCT) {
+          // Tính tổng giá bán của sản phẩm
+          const productRevenue = product.UNITPRICES * product.NUMBER_PRODUCT;
+          orderRevenue += productRevenue;
 
-    // Tính lợi nhuận từng đơn hàng
-    let totalProfit = 0;
-    const orderProfits = orders.map((order) => {
-      let orderProfit = 0;
+          // Lấy giá nhập kho cuối cho sản phẩm và biến thể
+          const lastInventoryEntry = await InventoryEntriesModel.aggregate([
+            { $unwind: "$LIST_PRODUCT_CREATED" },
+            {
+              $match: {
+                "LIST_PRODUCT_CREATED.ID_PRODUCT": product.ID_PRODUCT,
+                "LIST_PRODUCT_CREATED.DETAILS": {
+                  $all: product.LIST_MATCH_KEY.map((keyValue) => ({
+                    $elemMatch: { KEY: keyValue.KEY, VALUE: keyValue.VALUE },
+                  })),
+                },
+                IS_DELETE: false,
+              },
+            },
+            { $sort: { CRATED_DATE: -1 } }, // Lấy phiếu nhập mới nhất
+            { $limit: 1 },
+          ]);
 
-      order.LIST_PRODUCT.forEach((product) => {
-        const productId = product.ID_PRODUCT.toString();
-        const lastUnitPrice = lastUnitPrices[productId] || 0;
+          // Lấy giá nhập cuối (nếu không tìm thấy, mặc định là 0)
+          const lastUnitPrice =
+            lastInventoryEntry[0]?.LIST_PRODUCT_CREATED.UNIT_PRICE || 0;
 
-        // Lợi nhuận sản phẩm = (giá bán - giá nhập kho cuối cùng) * số lượng - giảm giá
-        const productProfit =
-          (product.UNITPRICES - lastUnitPrice) * product.NUMBER_PRODUCT;
-        orderProfit += productProfit;
-      });
+          // Tính tổng giá nhập kho cuối
+          const productCost = lastUnitPrice * product.NUMBER_PRODUCT;
+          orderCost += productCost;
 
-      // Trừ giảm giá trên đơn hàng
-      orderProfit -= order.PRICE_REDUCED;
+          // Lợi nhuận sản phẩm = (giá bán - giá nhập kho cuối) * số lượng
+          const productProfit = productRevenue - productCost;
+          orderProfit += productProfit;
+        }
 
-      // Tổng cộng lợi nhuận
-      totalProfit += orderProfit;
+        // Trừ giảm giá trên đơn hàng
+        orderProfit -= order.PRICE_REDUCED || 0;
 
+        // Cộng dồn vào tổng doanh thu, chi phí và lợi nhuận
+        totalRevenue += orderRevenue;
+        totalCost += orderCost;
+        totalProfit += orderProfit;
+
+        // Lưu thông tin chi tiết từng đơn hàng
+        productProfits.push({
+          orderId: order._id,
+          revenue: orderRevenue,
+          cost: orderCost,
+          discount: order.PRICE_REDUCED || 0,
+          profit: orderProfit,
+        });
+      }
+
+      // Kết quả cuối cùng
       return {
-        orderId: order._id,
-        profit: orderProfit,
+        totalRevenue,
+        totalCost,
+        totalProfit,
+        orders: productProfits,
       };
-    });
+    } catch (error) {
+      throw new Error(`Lỗi khi tính doanh thu trong ngày: ${error.message}`);
+    }
+  };
 
-    return { totalProfit, orders: orderProfits };
+  static getTotalOrderProfit = async (id_account) => {
+    try {
+      const ID_ACCOUNT = new ObjectId(id_account);
+
+      // Lấy danh sách đơn hàng theo tài khoản
+      const orders = await OrderModel.find({
+        ACCOUNT__ID: ID_ACCOUNT,
+
+        IS_PAYMENT: true,
+        IS_DELETE: false,
+      }).select("_id");
+
+      if (!orders.length) {
+        return { totalRevenue: 0, totalCost: 0, totalProfit: 0, orders: [] };
+      }
+
+      const orderIds = orders.map((order) => order._id);
+
+      // Tính tổng doanh thu và lợi nhuận
+      return await this.calculateTotalOrderProfit(orderIds);
+    } catch (error) {
+      throw new Error(
+        `Lỗi khi tính lợi nhuận theo tài khoản: ${error.message}`
+      );
+    }
   };
   static calculateOrderProfit = async (orderId) => {
     try {
@@ -969,6 +1007,37 @@ class OrderService {
       };
     } catch (error) {
       throw new Error(`Lỗi khi tính lợi nhuận: ${error.message}`);
+    }
+  };
+  static calculateTotalOrderProfit = async (orderIds) => {
+    try {
+      // Tính lợi nhuận từng đơn hàng
+      const orderProfits = [];
+      let totalRevenue = 0;
+      let totalCost = 0;
+      let totalProfit = 0;
+
+      for (const orderId of orderIds) {
+        const orderProfit = await this.calculateOrderProfit(orderId);
+
+        // Cộng dồn doanh thu, chi phí và lợi nhuận
+        totalRevenue += orderProfit.totalRevenue;
+        totalCost += orderProfit.totalCost;
+        totalProfit += orderProfit.profit;
+
+        // Lưu thông tin chi tiết từng đơn hàng
+        orderProfits.push(orderProfit);
+      }
+
+      // Kết quả cuối cùng
+      return {
+        totalRevenue,
+        totalCost,
+        totalProfit,
+        orders: orderProfits,
+      };
+    } catch (error) {
+      throw new Error(`Lỗi khi tính tổng lợi nhuận: ${error.message}`);
     }
   };
 }

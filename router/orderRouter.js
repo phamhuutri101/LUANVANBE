@@ -25,6 +25,11 @@ router.get(
   orderController.getOrderProfitInDay
 );
 router.get(
+  "/getTotalOrderProfit",
+  verify.verityToken,
+  orderController.getTotalOrderProfit
+);
+router.get(
   "/calculateOrderProfit/:id_order",
   orderController.calculateOrderProfit
 );

@@ -47,6 +47,18 @@ const cartController = {
       res.status(500).json(error);
     }
   },
+  getAllCart: async (req, res) => {
+    try {
+      const response = await CartService.getAllCart(req.user.id_user);
+      res.status(200).json({
+        message: "Lấy tất cả gi�� hàng thành công",
+        success: true,
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json(error);
+    }
+  },
   updateCart: async (req, res) => {
     try {
       const updateCart = await CartService.updateCart(

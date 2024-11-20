@@ -348,6 +348,7 @@ class CartService {
           USER_ID: ID_USER,
         },
       },
+
       {
         $project: {
           LIST_PRODUCT: {
@@ -361,8 +362,7 @@ class CartService {
           },
         },
       },
-      { $skip: (page - 1) * limit },
-      { $limit: limit },
+
       {
         $project: {
           LIST_PRODUCT_MAX_NUMBER: 0,
@@ -407,6 +407,8 @@ class CartService {
           ITEM: { $ne: {} },
         },
       },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
     ]);
 
     return getCart;

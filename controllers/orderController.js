@@ -289,6 +289,22 @@ class OrderController {
       });
     }
   };
+  static getTotalOrderProfit = async (req, res) => {
+    try {
+      const response = await OrderService.getTotalOrderProfit(req.user.id);
+      res.status(200).json({
+        success: true,
+        message: "Tính tổng doanh thu của tất cả đơn hàng",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  };
 }
 
 module.exports = OrderController;

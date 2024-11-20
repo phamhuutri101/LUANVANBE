@@ -4,6 +4,7 @@ const verify = require("../middleware/verifyToken");
 
 router.post("/:id", verify.verityToken, cartController.addCart);
 router.get("/", verify.verityToken, cartController.getCart);
+router.get("/getAll", verify.verityToken, cartController.getAllCart);
 router.put(
   "/updatePriceAndShipping",
   verify.verityToken,
