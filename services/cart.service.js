@@ -5,7 +5,13 @@ const PriceService = require("../services/price.service");
 const ProductModel = require("../models/product");
 class CartService {
   // xem lai xu ly don gia mac dinh
-  static addCart = async (id_user, id_product, keys = [], values = []) => {
+  static addCart = async (
+    id_user,
+    id_product,
+    id_shop,
+    keys = [],
+    values = []
+  ) => {
     const ID_USER = new ObjectId(id_user);
     const ID_PRODUCT = new ObjectId(id_product);
     let details = [];
@@ -212,6 +218,7 @@ class CartService {
   static addCartKV = async (id_user, id_product, keys, values, number = 1) => {
     const ID_USER = new ObjectId(id_user);
     const ID_PRODUCT = new ObjectId(id_product);
+
     let details = [];
 
     if (
@@ -296,6 +303,7 @@ class CartService {
               LIST_MATCH_KEY: details,
               NUMBER_PRODUCT: product[0].QUANTITY_BY_KEY_VALUE.QUANTITY,
               ID_KEY_VALUE: product[0].QUANTITY_BY_KEY_VALUE,
+              ID_ACCOUNT_SHOP: product[0].ACCOUNT__ID,
             },
           },
           $inc: {

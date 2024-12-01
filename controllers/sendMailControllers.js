@@ -27,7 +27,14 @@ const sendMailController = {
   },
   sendMailOrder: async (req, res) => {
     try {
-      await sendEmailServices.sendMailOrder(req.body.email);
+      await sendEmailServices.sendMailOrder(
+        req.body.email,
+        req.body.products,
+        req.body.address,
+        req.body.PRICE,
+        req.body.DISCOUNT,
+        req.body.SHIPPING
+      );
       res.status(200).json({
         message: "gửi thư cảm ơn thành công",
         success: true,

@@ -48,6 +48,9 @@ var CART = new Schema({
       ID_KEY_VALUE: {
         type: Schema.Types.ObjectId,
       },
+      ID_ACCOUNT_SHOP: {
+        type: Schema.Types.ObjectId,
+      },
     },
   ],
 

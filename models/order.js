@@ -108,5 +108,8 @@ var ORDER = new Schema({
     type: Schema.Types.ObjectId,
     required: true,
   },
+  ID_ACCOUNT_SHOP: {
+    type: Schema.Types.ObjectId,
+  },
 });
 module.exports = mongoose.model("order", ORDER);

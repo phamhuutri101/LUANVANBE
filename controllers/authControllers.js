@@ -271,7 +271,7 @@ const authController = {
       // Kiểm tra quyền admin
       if (!loginAccount.OBJECT_ROLE.IS_ADMIN) {
         return res.status(403).json({
-          message: "Bạn không có quyền truy cập admin",
+          message: "Bạn không có quyền truy cập vào trang quản trị",
           success: false,
         });
       }

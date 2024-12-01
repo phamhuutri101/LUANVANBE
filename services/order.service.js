@@ -23,6 +23,7 @@ class OrderService {
     try {
       const ID_USER = new ObjectId(id_user);
       const ID_ACCOUNT = new ObjectId(id_account);
+
       const PhoneUser = await UserService.getNumberPhoneUser(ID_ACCOUNT);
       const ListProductData = await CartService.getAllCart(ID_USER);
       if (!ListProductData || ListProductData.length === 0) {
@@ -31,6 +32,7 @@ class OrderService {
           message: "Không có sản phẩm nào trong giỏ hàng",
         };
       } else {
+        const ID_ACCOUNT_SHOP = ListProductData[0].ITEM.ID_ACCOUNT_SHOP;
         const ListProduct = ListProductData.map((cart) => ({
           ID_PRODUCT: cart.ITEM.ID_PRODUCT,
           FROM_DATE: cart.ITEM.FROM_DATE,
@@ -40,6 +42,7 @@ class OrderService {
           LIST_MATCH_KEY: cart.ITEM.LIST_MATCH_KEY,
           ID_KEY_VALUE: cart.ITEM.ID_KEY_VALUE,
           NUMBER_PRODUCT: cart.ITEM.NUMBER_PRODUCT,
+          ID_ACCOUNT_SHOP: cart.ITEM.ID_ACCOUNT_SHOP,
         }));
         const newOrder = await OrderModel.create({
           ORDER_CODE: null,
@@ -59,6 +62,7 @@ class OrderService {
             COMMUNE: commune,
             DESC: desc,
           },
+          ID_ACCOUNT_SHOP: ID_ACCOUNT_SHOP,
         });
         return newOrder;
       }
@@ -600,17 +604,65 @@ class OrderService {
       { $limit: limit },
       {
         $lookup: {
-          from: "products",
-          localField: "LIST_PRODUCT.ID_PRODUCT",
-          foreignField: "_id",
-          as: "PRODUCT",
+          from: "products", // Bảng products
+          localField: "LIST_PRODUCT.ID_PRODUCT", // ID_PRODUCT trong LIST_PRODUCT
+          foreignField: "_id", // _id trong products
+          as: "PRODUCTS_DETAIL", // Tên trường chứa kết quả
         },
       },
       {
-        $unwind: "$PRODUCT",
+        $addFields: {
+          PRODUCT: {
+            $arrayElemAt: ["$PRODUCTS_DETAIL", 0], // Lấy sản phẩm đầu tiên từ PRODUCTS_DETAIL
+          },
+        },
+      },
+      {
+        $project: {
+          PRODUCTS_DETAIL: 0, // Loại bỏ PRODUCTS_DETAIL khỏi kết quả
+        },
       },
     ]);
+
     return order;
+  };
+  static getShopOrder = async (id_account, page = 1, limit = 10) => {
+    const ID_ACCOUNT = new ObjectId(id_account);
+    page = Number(page);
+    limit = Number(limit);
+
+    const orders = await OrderModel.aggregate([
+      {
+        $match: {
+          ID_ACCOUNT_SHOP: ID_ACCOUNT,
+          IS_DELETE: false,
+        },
+      },
+      { $skip: (page - 1) * limit },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: "products", // Bảng products
+          localField: "LIST_PRODUCT.ID_PRODUCT", // ID_PRODUCT trong LIST_PRODUCT
+          foreignField: "_id", // _id trong products
+          as: "PRODUCTS_DETAIL", // Tên trường chứa kết quả
+        },
+      },
+      {
+        $addFields: {
+          PRODUCT: {
+            $arrayElemAt: ["$PRODUCTS_DETAIL", 0], // Lấy sản phẩm đầu tiên từ PRODUCTS_DETAIL
+          },
+        },
+      },
+      {
+        $project: {
+          PRODUCTS_DETAIL: 0, // Loại bỏ PRODUCTS_DETAIL khỏi kết quả
+        },
+      },
+    ]);
+
+    return orders;
   };
 
   // static updateNumberProductPayment = async (id_account) =>{
@@ -754,7 +806,7 @@ class OrderService {
       const total = await OrderModel.aggregate([
         {
           $match: {
-            ACCOUNT__ID: ID_ACCOUNT,
+            ID_ACCOUNT_SHOP: ID_ACCOUNT,
             TIME_PAYMENT: { $gte: today, $lt: tomorrow },
             IS_PAYMENT: true, // Ensures only completed payments are considered
           },
@@ -778,30 +830,34 @@ class OrderService {
     try {
       const ID_ACCOUNT = new ObjectId(id_account);
       const startOfMonth = new Date();
-      startOfMonth.setDate(1); // Đặt ngày bắt đầu là ngày đầu tiên của tháng
+      startOfMonth.setDate(1); // Ngày bắt đầu là ngày đầu tiên của tháng
       startOfMonth.setHours(0, 0, 0, 0); // Đặt thời gian bắt đầu từ đầu ngày
 
       const endOfMonth = new Date(startOfMonth);
-      endOfMonth.setMonth(startOfMonth.getMonth() + 1); // Đặt thời gian kết thúc là ngày đầu tiên của tháng tiếp theo
+      endOfMonth.setMonth(startOfMonth.getMonth() + 1); // Ngày kết thúc là ngày đầu tiên của tháng sau
 
-      // Thực hiện phép tổng hợp để tính tổng số tiền giao dịch trong tháng
       const total = await OrderModel.aggregate([
         {
           $match: {
-            ACCOUNT__ID: ID_ACCOUNT,
+            ID_ACCOUNT_SHOP: ID_ACCOUNT,
             TIME_PAYMENT: { $gte: startOfMonth, $lt: endOfMonth },
-            IS_PAYMENT: true, // Đảm bảo chỉ tính các giao dịch đã hoàn tất
+            IS_PAYMENT: true, // Chỉ tính các giao dịch đã thanh toán
           },
         },
         {
           $group: {
             _id: null,
-            totalOrderPrice: { $sum: "$ORDER_PRICE" }, // Tổng hợp trường ORDER_PRICE
+            totalOrderPrice: { $sum: "$ORDER_PRICE" }, // Tổng số tiền từ ORDER_PRICE
           },
         },
       ]);
 
-      return total[0]?.totalOrderPrice || 0; // Trả về tổng số tiền hoặc 0 nếu không có kết quả
+      // Trả về tổng số tiền và tháng
+      return {
+        month: startOfMonth.getMonth() + 1, // Tháng (1-12)
+        year: startOfMonth.getFullYear(), // Năm
+        totalOrderPrice: total[0]?.totalOrderPrice || 0, // Tổng tiền hoặc 0 nếu không có kết quả
+      };
     } catch (error) {
       console.error("Error calculating total order price in month:", error);
       throw error;
@@ -817,7 +873,7 @@ class OrderService {
     const orders = await OrderModel.aggregate([
       {
         $match: {
-          ACCOUNT__ID: ID_ACCOUNT,
+          ID_ACCOUNT_SHOP: ID_ACCOUNT,
           TIME_PAYMENT: { $gte: startOfDay, $lte: endOfDay },
           IS_DELETE: false,
         },
@@ -837,7 +893,7 @@ class OrderService {
 
       // Lấy danh sách đơn hàng trong ngày
       const orders = await OrderModel.find({
-        ACCOUNT__ID: ID_ACCOUNT,
+        ID_ACCOUNT_SHOP: ID_ACCOUNT,
         TIME_PAYMENT: { $gte: startOfDay, $lte: endOfDay },
         IS_PAYMENT: true,
         IS_DELETE: false,
@@ -860,7 +916,7 @@ class OrderService {
         // Duyệt qua từng sản phẩm trong đơn hàng
         for (const product of order.LIST_PRODUCT) {
           // Tính tổng giá bán của sản phẩm
-          const productRevenue = product.UNITPRICES * product.NUMBER_PRODUCT;
+          const productRevenue = product.UNITPRICES * product.QLT;
           orderRevenue += productRevenue;
 
           // Lấy giá nhập kho cuối cho sản phẩm và biến thể
@@ -886,7 +942,7 @@ class OrderService {
             lastInventoryEntry[0]?.LIST_PRODUCT_CREATED.UNIT_PRICE || 0;
 
           // Tính tổng giá nhập kho cuối
-          const productCost = lastUnitPrice * product.NUMBER_PRODUCT;
+          const productCost = lastUnitPrice * product.QLT;
           orderCost += productCost;
 
           // Lợi nhuận sản phẩm = (giá bán - giá nhập kho cuối) * số lượng
@@ -896,7 +952,8 @@ class OrderService {
 
         // Trừ giảm giá trên đơn hàng
         orderProfit -= order.PRICE_REDUCED || 0;
-
+        // Trừ thêm phí ship
+        orderProfit -= order.SHIPPING_FEE || 0;
         // Cộng dồn vào tổng doanh thu, chi phí và lợi nhuận
         totalRevenue += orderRevenue;
         totalCost += orderCost;
@@ -930,7 +987,7 @@ class OrderService {
 
       // Lấy danh sách đơn hàng theo tài khoản
       const orders = await OrderModel.find({
-        ACCOUNT__ID: ID_ACCOUNT,
+        ID_ACCOUNT_SHOP: ID_ACCOUNT,
 
         IS_PAYMENT: true,
         IS_DELETE: false,
@@ -965,7 +1022,7 @@ class OrderService {
       // Duyệt qua từng sản phẩm trong đơn hàng
       for (const product of order.LIST_PRODUCT) {
         // Tính tổng giá bán của sản phẩm
-        const productRevenue = product.UNITPRICES * product.NUMBER_PRODUCT;
+        const productRevenue = product.UNITPRICES * product.QLT;
         totalRevenue += productRevenue;
 
         // Lấy giá nhập cuối cùng cho sản phẩm và biến thể
@@ -991,11 +1048,15 @@ class OrderService {
           lastInventoryEntry[0]?.LIST_PRODUCT_CREATED.UNIT_PRICE || 0;
 
         // Tính tổng giá nhập kho cuối
-        totalCost += lastUnitPrice * product.NUMBER_PRODUCT;
+        totalCost += lastUnitPrice * product.QLT;
       }
 
-      // Tính lợi nhuận
-      const profit = totalRevenue - totalCost - (order.PRICE_REDUCED || 0);
+      // Tính lợi nhuận (có thêm phí vận chuyển)
+      const profit =
+        totalRevenue -
+        totalCost -
+        (order.PRICE_REDUCED || 0) -
+        (order.SHIPPING_FEE || 0);
 
       // Kết quả
       return {
@@ -1003,12 +1064,14 @@ class OrderService {
         totalRevenue,
         totalCost,
         discount: order.PRICE_REDUCED || 0,
+        shippingFee: order.SHIPPING_FEE || 0, // Thêm thông tin phí vận chuyển
         profit,
       };
     } catch (error) {
       throw new Error(`Lỗi khi tính lợi nhuận: ${error.message}`);
     }
   };
+
   static calculateTotalOrderProfit = async (orderIds) => {
     try {
       // Tính lợi nhuận từng đơn hàng

@@ -40,6 +40,7 @@ router.get(
 );
 router.get("/lastStatusOrderCode/:id", orderController.getLastOrderStatus);
 router.get("/", verify.verityToken, orderController.getUserOrder);
+router.get("/ShopOrder", verify.verityToken, orderController.getShopOrder);
 router.get(
   "/successPayment",
   verify.verityToken,

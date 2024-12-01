@@ -5,6 +5,7 @@ const registerUserSchema = Joi.object({
   full_name: Joi.string().required(),
   email_user: Joi.string().email().required(),
   phone_number: Joi.number().required(),
+  re_password: Joi.string().required(),
   gender: Joi.string().valid("Nam", "Nữ", "Khác"),
 });
 
