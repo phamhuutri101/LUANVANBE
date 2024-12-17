@@ -128,5 +128,37 @@ const ShopController = {
       });
     }
   },
+  cancelActiveShop: async (req, res) => {
+    try {
+      const response = await ShopServices.cancelActiveShop(req.params.id);
+      res.status(200).json({
+        success: true,
+        message: "Tài khoản đã hủy kích hoạt thành công",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  },
+  getShop: async (req, res) => {
+    try {
+      const response = await ShopServices.getShop();
+      res.status(200).json({
+        success: true,
+        message: "Lấy thông tin các shop thành công",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        data: null,
+      });
+    }
+  },
 };
 module.exports = ShopController;

@@ -12,7 +12,7 @@ class PaymentMethod {
     var partnerCode = "MOMO";
     var redirectUrl = "http://localhost:3000/";
     var ipnUrl =
-      "https://17e9-2402-800-6343-d18d-34d8-c7ed-ec24-3f07.ngrok-free.app/v1/payment/callback";
+      "https://0e26-2402-800-6343-fd1f-b112-b4e6-5274-31e5.ngrok-free.app/v1/payment/callback";
     var requestType = "payWithMethod";
     var amount = price;
     var orderId = partnerCode + new Date().getTime();

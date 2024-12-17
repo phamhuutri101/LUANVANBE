@@ -1,7 +1,11 @@
 const router = require("express").Router();
 const cartController = require("../controllers/cartController");
 const verify = require("../middleware/verifyToken");
-
+router.post(
+  "/getQuantity/:id",
+  verify.verityToken,
+  cartController.getQuantityInCart
+);
 router.post("/:id", verify.verityToken, cartController.addCart);
 router.get("/", verify.verityToken, cartController.getCart);
 router.get("/getAll", verify.verityToken, cartController.getAllCart);

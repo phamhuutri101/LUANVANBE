@@ -702,5 +702,61 @@ class CartService {
 
     return deleteCart;
   };
+  static getProductQuantityInCart = async (
+    id_user,
+    id_product,
+    keys,
+    values
+  ) => {
+    try {
+      const ID_USER = new ObjectId(id_user);
+      const ID_PRODUCT = new ObjectId(id_product);
+
+      if (
+        !Array.isArray(keys) ||
+        !Array.isArray(values) ||
+        keys.length !== values.length
+      ) {
+        throw new Error("Keys and values must be arrays of the same length");
+      }
+
+      // Aggregate để tìm sản phẩm
+      const result = await CartModel.aggregate([
+        {
+          $match: { USER_ID: ID_USER }, // Lọc theo người dùng
+        },
+        {
+          $unwind: "$LIST_PRODUCT", // Trải từng sản phẩm
+        },
+        {
+          $match: {
+            "LIST_PRODUCT.ID_PRODUCT": ID_PRODUCT, // Lọc theo sản phẩm
+            $or: [
+              { "LIST_PRODUCT.TO_DATE": null }, // Chưa hết hạn
+              { "LIST_PRODUCT.TO_DATE": { $gt: new Date() } }, // Còn hạn
+            ],
+            // $and: keys.map((key, index) => ({
+            //   "LIST_PRODUCT.LIST_MATCH_KEY": {
+            //     $elemMatch: { KEY: key, VALUE: values[index] },
+            //   },
+            // })),
+          },
+        },
+        {
+          $project: {
+            QUANTITY: "$LIST_PRODUCT.QUANTITY", // Chỉ lấy số lượng
+            ID_PRODUCT: "$LIST_PRODUCT.ID_PRODUCT", // Để kiểm tra thêm
+            LIST_MATCH_KEY: "$LIST_PRODUCT.LIST_MATCH_KEY", // Debug dữ liệu
+          },
+        },
+      ]);
+
+      // Trả về kết quả
+      return result.length > 0 ? result[0].QUANTITY : 0;
+    } catch (error) {
+      console.error("Error in getProductQuantityInCart:", error);
+      throw error;
+    }
+  };
 }
 module.exports = CartService;

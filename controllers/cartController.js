@@ -134,5 +134,26 @@ const cartController = {
       });
     }
   },
+  getQuantityInCart: async (req, res) => {
+    try {
+      const response = await CartService.getProductQuantityInCart(
+        req.user.id_user,
+        req.params.id,
+        req.body.key,
+        req.body.value
+      );
+      res.status(200).json({
+        success: true,
+        message: "Lấy thành công",
+        data: response,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: error.message,
+        success: false,
+        data: null,
+      });
+    }
+  },
 };
 module.exports = cartController;

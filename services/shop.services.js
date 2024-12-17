@@ -3,6 +3,7 @@ const AccountModel = require("../models/account");
 const ProductModel = require("../models/product");
 const ObjectId = require("mongoose").Types.ObjectId;
 const moment = require("moment");
+const { deleteOne } = require("../models/cart");
 
 class ShopServices {
   static CheckTimeActive = async (
@@ -173,6 +174,25 @@ class ShopServices {
         IS_ACTIVE: true,
       });
       return response.SHOP_NAME;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  static cancelActiveShop = async (id_account) => {
+    try {
+      const ACCOUNT_ID = new ObjectId(id_account);
+      const response = await ShopModel.deleteOne({
+        ID_ACCOUNT: ACCOUNT_ID,
+      });
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  static getShop = async () => {
+    try {
+      const response = await ShopModel.find({});
+      return response;
     } catch (error) {
       console.error(error);
     }
